@@ -1,5 +1,5 @@
 <!-- Sidebar Navbar -->
-<aside class="w-64 bg-white border-r border-gray-100 p-5 hidden md:flex flex-col justify-start shrink-0 sticky top-14 self-start h-[calc(100vh-3.5rem)] overflow-y-auto">
+<aside class="w-64 bg-white border-r border-gray-100 p-5 hidden md:flex flex-col justify-start shrink-0 sticky top-14 min-h-[calc(100vh-3.5rem)]">
     <div class="space-y-9">
         
         <!-- Logo Campuslink -->

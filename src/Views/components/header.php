@@ -15,9 +15,9 @@
 </head>
 <body class="bg-gray-50/50 text-gray-800 flex flex-col min-h-screen">
 
-    <header class="bg-white border-b border-gray-100 sticky top-0 z-30">
+    <header class="max-w-[1600px] mx-auto bg-white border-b border-gray-100 sticky top-0 z-30">
         <div class="bg-white">
-            <div class="max-w-[1600px] mx-auto px-6 h-14 flex items-center justify-between">
+            <div class="w-full px-6 h-14 flex items-center justify-between">
                 
                 <!-- Gauche: Liens & Localisation -->
                 <div class="flex items-center space-x-4 pl-0 md:pl-64">
