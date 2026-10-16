@@ -81,8 +81,8 @@ CREATE TABLE Conversations (
 -- 6. Messages
 CREATE TABLE Messages (
     Id_messages INT AUTO_INCREMENT PRIMARY KEY,
-    content VARCHAR(255) NOT NULL,
-    read_at DATETIME,
+    content TEXT NOT NULL,
+    read_at DATETIME NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     Id_users INT NOT NULL,
     Id_conversations INT NOT NULL,
@@ -98,7 +98,25 @@ CREATE TABLE Messages (
         ON DELETE CASCADE
 );
 
--- 7. Reviews
+-- 7. Association Users / Conversations
+CREATE TABLE lier (
+    Id_users INT NOT NULL,
+    Id_conversations INT NOT NULL,
+
+    PRIMARY KEY (Id_users, Id_conversations),
+
+    FOREIGN KEY (Id_users)
+        REFERENCES Users(Id_users)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE,
+
+    FOREIGN KEY (Id_conversations)
+        REFERENCES Conversations(Id_conversations)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE
+);
+
+-- 8. Reviews
 CREATE TABLE Reviews (
     Id_reviews INT AUTO_INCREMENT PRIMARY KEY,
     rating INT NOT NULL,
@@ -120,12 +138,14 @@ CREATE TABLE Reviews (
         ON DELETE RESTRICT
 );
 
--- 8. Favorites
+-- 9. Favorites
 CREATE TABLE Favorites (
     Id_favorites INT AUTO_INCREMENT PRIMARY KEY,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     Id_services INT NOT NULL,
     Id_users INT NOT NULL,
+
+    UNIQUE (Id_services, Id_users),
 
     FOREIGN KEY (Id_services)
         REFERENCES Services(Id_services)
@@ -138,12 +158,12 @@ CREATE TABLE Favorites (
         ON DELETE CASCADE
 );
 
--- 9. Notifications
+-- 10. Notifications
 CREATE TABLE Notifications (
     Id_notifications INT AUTO_INCREMENT PRIMARY KEY,
     type VARCHAR(255) NOT NULL,
-    content VARCHAR(255) NOT NULL,
-    read_at DATETIME,
+    content TEXT NOT NULL,
+    read_at DATETIME NULL,
     link VARCHAR(255),
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     Id_users INT NOT NULL,
@@ -154,11 +174,11 @@ CREATE TABLE Notifications (
         ON DELETE CASCADE
 );
 
--- 10. Events
+-- 11. Events
 CREATE TABLE Events (
     Id_events INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
-    description VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL,
     location VARCHAR(255),
     starts_at DATETIME NOT NULL,
     ends_at DATETIME,
@@ -173,23 +193,43 @@ CREATE TABLE Events (
         ON DELETE RESTRICT
 );
 
--- 11. Events_participants
+-- 12. Events_participants
+-- Une ligne par utilisateur inscrit à un événement
 CREATE TABLE Events_participants (
-    Id_events_participants INT AUTO_INCREMENT PRIMARY KEY,
+    Id_events INT NOT NULL,
+    Id_users INT NOT NULL,
     status VARCHAR(50) NOT NULL DEFAULT 'registered',
-    registered_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    registered_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (Id_events, Id_users),
+
+    FOREIGN KEY (Id_events)
+        REFERENCES Events(Id_events)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE,
+
+    FOREIGN KEY (Id_users)
+        REFERENCES Users(Id_users)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE
 );
 
--- 12. Media
+-- 13. Media
 CREATE TABLE Media (
     Id_media INT AUTO_INCREMENT PRIMARY KEY,
-    uploaded_at VARCHAR(255),
+    uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     name_media VARCHAR(255) NOT NULL,
     file_path VARCHAR(255) NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    file_size VARCHAR(255),
-    Id_services INT,
-    Id_events INT,
+    file_size BIGINT,
+    Id_services INT NULL,
+    Id_events INT NULL,
+
+    CONSTRAINT chk_media_parent CHECK (
+        (Id_services IS NOT NULL AND Id_events IS NULL)
+        OR
+        (Id_services IS NULL AND Id_events IS NOT NULL)
+    ),
 
     FOREIGN KEY (Id_services)
         REFERENCES Services(Id_services)
@@ -198,24 +238,6 @@ CREATE TABLE Media (
 
     FOREIGN KEY (Id_events)
         REFERENCES Events(Id_events)
-        ON UPDATE CASCADE
-        ON DELETE CASCADE
-);
-
--- 13. participer
-CREATE TABLE participer (
-    Id_users INT NOT NULL,
-    Id_events_participants INT NOT NULL,
-
-    PRIMARY KEY (Id_users, Id_events_participants),
-
-    FOREIGN KEY (Id_users)
-        REFERENCES Users(Id_users)
-        ON UPDATE CASCADE
-        ON DELETE CASCADE,
-
-    FOREIGN KEY (Id_events_participants)
-        REFERENCES Events_participants(Id_events_participants)
         ON UPDATE CASCADE
         ON DELETE CASCADE
 );
