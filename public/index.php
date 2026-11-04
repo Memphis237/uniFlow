@@ -20,7 +20,8 @@ if (($_GET['api'] ?? '') !== '') {
                 if ($title===''||$category===''||$description===''||$unit===''||$price<0||!$file||$file['error']!==UPLOAD_ERR_OK||$file['size']>5*1024*1024) throw new RuntimeException('Vérifie les champs et choisis une image de 5 Mo maximum.');
                 $mime=(new finfo(FILEINFO_MIME_TYPE))->file($file['tmp_name']); $ext=['image/jpeg'=>'jpg','image/png'=>'png','image/webp'=>'webp'][$mime]??null; if(!$ext) throw new RuntimeException('Format accepté : JPG, PNG ou WebP.');
                 $cat=$pdo->prepare('SELECT Id_categories FROM Categories WHERE name=:name LIMIT 1');$cat->execute(['name'=>$category]);$categoryId=$cat->fetchColumn();if(!$categoryId){$ins=$pdo->prepare('INSERT INTO Categories(name) VALUES(:name)');$ins->execute(['name'=>$category]);$categoryId=(int)$pdo->lastInsertId();}
-                $ins=$pdo->prepare('INSERT INTO Services(title,price,description,unit,location,Id_categories,Id_users) VALUES(:title,:price,:description,:unit,:location,:category,:user)');$ins->execute(['title'=>$title,'price'=>$price,'description'=>$description,'unit'=>$unit,'location'=>'Campus Lyon','category'=>$categoryId,'user'=>$actor['Id_users']]);$newId=(int)$pdo->lastInsertId();
+                $serviceLocation=trim((string)($actor['adresse']??'').' '.(string)($actor['postal_code']??''))?:'Campus Lyon';
+                $ins=$pdo->prepare('INSERT INTO Services(title,price,description,unit,location,Id_categories,Id_users) VALUES(:title,:price,:description,:unit,:location,:category,:user)');$ins->execute(['title'=>$title,'price'=>$price,'description'=>$description,'unit'=>$unit,'location'=>$serviceLocation,'category'=>$categoryId,'user'=>$actor['Id_users']]);$newId=(int)$pdo->lastInsertId();
                 $dir=__DIR__.'/uploads/services';if(!is_dir($dir)&&!mkdir($dir,0755,true))throw new RuntimeException('Impossible de préparer le stockage des images.');$filename=bin2hex(random_bytes(16)).'.'.$ext;if(!move_uploaded_file($file['tmp_name'],$dir.'/'.$filename))throw new RuntimeException('L’image n’a pas pu être enregistrée.');
                 $media=$pdo->prepare('INSERT INTO Media(name_media,file_path,file_size,Id_services) VALUES(:name,:path,:size,:service)');$media->execute(['name'=>$file['name'],'path'=>'uploads/services/'.$filename,'size'=>$file['size'],'service'=>$newId]);echo json_encode(['ok'=>true]);exit;
             }
@@ -52,7 +53,10 @@ if (($_GET['api'] ?? '') !== '') {
     } catch (Throwable $exception) {
         error_log($exception->__toString());
         http_response_code(500);
-        echo json_encode(['error' => 'Une erreur est survenue. Réessayez.']);
+        $message = ($_GET['api'] ?? '') === 'service-create'
+            ? 'Le service n’a pas pu être enregistré. Vérifie les tables Services, Categories et Media dans schema.sql, puis consulte le journal PHP pour le détail.'
+            : 'Une erreur est survenue. Réessayez.';
+        echo json_encode(['error' => $message], JSON_INVALID_UTF8_SUBSTITUTE);
     }
     exit;
 }
@@ -66,11 +70,13 @@ if (($_GET['page'] ?? '') === 'services') {
     exit;
 }
 if (($_GET['page'] ?? '') === 'messages') { require __DIR__ . '/../src/Views/pages/message.php'; exit; }
+if (($_GET['page'] ?? '') === 'profile') { require __DIR__ . '/../src/Views/pages/profile.php'; exit; }
+if (($_GET['page'] ?? '') === 'logout') { require __DIR__ . '/../src/Services/logout.php'; exit; }
 if (($_GET['page'] ?? '') === 'admin') {
     require __DIR__ . '/../src/Views/pages/admin.php';
     exit;
 }
-$simplePages = ['campus', 'messages', 'favorites', 'profile', 'help'];
+$simplePages = ['campus', 'favorites', 'help'];
 if (in_array($_GET['page'] ?? '', $simplePages, true)) {
     require __DIR__ . '/../src/Views/pages/welcome.php';
     exit;

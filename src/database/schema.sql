@@ -12,11 +12,14 @@ CREATE TABLE Users (
     email VARCHAR(100) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
     adresse VARCHAR(255),
+    postal_code VARCHAR(20),
+    phone VARCHAR(30),
     is_online BOOLEAN DEFAULT FALSE,
     last_seen DATETIME,
     role VARCHAR(50) NOT NULL DEFAULT 'student',
     biographie VARCHAR(255),
     avatar VARCHAR(255),
+    cover_image VARCHAR(255),
     status VARCHAR(50) NOT NULL DEFAULT 'active',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );

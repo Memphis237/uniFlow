@@ -55,7 +55,7 @@ function auth_user_from_cookie(): ?array
     if (!is_string($token) || $token === '') return null;
     $claims = auth_decode_token($token);
     if ($claims === null) return null;
-    $query = db()->prepare('SELECT Id_users, name, first_name, email, role FROM Users WHERE Id_users = :id AND status = :status LIMIT 1');
+    $query = db()->prepare('SELECT Id_users, name, first_name, email, role, adresse, postal_code, phone, avatar FROM Users WHERE Id_users = :id AND status = :status LIMIT 1');
     $query->execute(['id' => (int) $claims['sub'], 'status' => 'active']);
     return $query->fetch() ?: null;
 }
@@ -68,7 +68,7 @@ function auth_user_from_authorization(): ?array
     }
     $claims = auth_decode_token(trim($matches[1]));
     if ($claims === null) return null;
-    $query = db()->prepare('SELECT Id_users, name, first_name, email, role FROM Users WHERE Id_users = :id AND status = :status LIMIT 1');
+    $query = db()->prepare('SELECT Id_users, name, first_name, email, role, adresse, postal_code, phone, avatar FROM Users WHERE Id_users = :id AND status = :status LIMIT 1');
     $query->execute(['id' => (int) $claims['sub'], 'status' => 'active']);
     return $query->fetch() ?: null;
 }
