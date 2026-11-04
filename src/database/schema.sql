@@ -14,8 +14,10 @@ CREATE TABLE Users (
     password VARCHAR(255) NOT NULL,
     adresse VARCHAR(255),
     role VARCHAR(50) NOT NULL DEFAULT 'student',
-    biographie VARCHAR(255),
+    biographie VARCHAR(1000),
     avatar VARCHAR(255),
+    formation VARCHAR(255),
+    ecole VARCHAR(255),
     status VARCHAR(50) NOT NULL DEFAULT 'active',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -219,7 +221,7 @@ CREATE TABLE Media (
     Id_media INT AUTO_INCREMENT PRIMARY KEY,
     uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     name_media VARCHAR(255) NOT NULL,
-    file_path VARCHAR(255) NOT NULL,
+    file_path TEXT NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     file_size BIGINT,
     Id_services INT NULL,
