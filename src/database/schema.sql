@@ -35,7 +35,8 @@ CREATE TABLE Services (
     price DECIMAL(15,2) NOT NULL DEFAULT 0.00,
     location VARCHAR(255),
     status VARCHAR(50) NOT NULL DEFAULT 'active',
-    description VARCHAR(255),
+    description TEXT,
+    unit VARCHAR(80) NOT NULL DEFAULT 'la prestation',
     Id_categories INT NOT NULL,
     Id_users INT NOT NULL,
 
