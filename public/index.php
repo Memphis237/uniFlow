@@ -9,8 +9,10 @@ if (($_GET['api'] ?? '') !== '') {
     try {
         if ($_GET['api'] === 'auth' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             $input = json_decode((string) file_get_contents('php://input'), true, 512, JSON_THROW_ON_ERROR);
-            $user = auth_handle((string) ($input['action'] ?? 'login'), (string) ($input['name'] ?? ''), (string) ($input['email'] ?? ''), (string) ($input['password'] ?? ''));
-            echo json_encode(['token' => auth_create_token($user)], JSON_THROW_ON_ERROR);
+            $user = auth_handle((string) ($input['action'] ?? 'login'), (string) ($input['name'] ?? ''), (string) ($input['email'] ?? ''), (string) ($input['password'] ?? ''), (string) ($input['first_name'] ?? ''));
+            $token = auth_create_token($user);
+            auth_set_cookie($user);
+            echo json_encode(['token' => $token], JSON_THROW_ON_ERROR);
             exit;
         }
         if ($_GET['api'] === 'me' && $_SERVER['REQUEST_METHOD'] === 'GET') {
@@ -36,23 +38,31 @@ if (($_GET['page'] ?? '') === 'home') {
     require __DIR__ . '/../src/Views/pages/home.php';
     exit;
 }
+if (($_GET['page'] ?? '') === 'admin') {
+    require __DIR__ . '/../src/Views/pages/admin.php';
+    exit;
+}
 
 $mode = (($_GET['mode'] ?? 'login') === 'register') ? 'register' : 'login';
 $error = '';
 $oldName = '';
+$oldFirstName = '';
 $oldEmail = '';
 $csrf = auth_csrf_token();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $mode = (($_POST['action'] ?? '') === 'register') ? 'register' : 'login';
     $oldName = trim((string) ($_POST['name'] ?? ''));
+    $oldFirstName = trim((string) ($_POST['first_name'] ?? ''));
     $oldEmail = trim((string) ($_POST['email'] ?? ''));
     try {
         if (!hash_equals($csrf, (string) ($_POST['csrf_token'] ?? ''))) {
             throw new RuntimeException('Votre session a expiré. Rechargez la page et réessayez.');
         }
-        $user = auth_handle($mode, $oldName, $oldEmail, (string) ($_POST['password'] ?? ''));
+        $user = auth_handle($mode, $oldName, $oldEmail, (string) ($_POST['password'] ?? ''), $oldFirstName);
         $loginToken = auth_create_token($user);
+        auth_set_cookie($user);
+        $redirectPage = ($user['role'] ?? '') === 'admin' ? 'admin' : 'home';
     } catch (RuntimeException $exception) {
         $error = $exception->getMessage();
     } catch (Throwable $exception) {
@@ -105,8 +115,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <input type="hidden" name="action" value="<?= $mode ?>">
                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
                     <?php if ($mode === 'register'): ?>
-                    <label for="name">Nom complet</label>
-                    <div class="input-wrap"><span class="input-icon" aria-hidden="true">✳</span><input id="name" name="name" type="text" autocomplete="name" placeholder="Ex. Camille Martin" value="<?= htmlspecialchars($oldName, ENT_QUOTES, 'UTF-8') ?>" required maxlength="255"></div>
+                    <label for="first_name">Prénom</label>
+                    <div class="input-wrap"><input id="first_name" name="first_name" type="text" autocomplete="given-name" placeholder="Ex. Camille" value="<?= htmlspecialchars($oldFirstName, ENT_QUOTES, 'UTF-8') ?>" required maxlength="255"></div>
+                    <label for="name">Nom</label>
+                    <div class="input-wrap"><span class="input-icon" aria-hidden="true">✳</span><input id="name" name="name" type="text" autocomplete="family-name" placeholder="Ex. Martin" value="<?= htmlspecialchars($oldName, ENT_QUOTES, 'UTF-8') ?>" required maxlength="255"></div>
                     <?php endif; ?>
                     <label for="email">Adresse e-mail</label>
                     <div class="input-wrap"><span class="input-icon" aria-hidden="true">＠</span><input id="email" name="email" type="email" autocomplete="email" placeholder="vous@exemple.fr" value="<?= htmlspecialchars($oldEmail, ENT_QUOTES, 'UTF-8') ?>" required maxlength="255"></div>
@@ -122,9 +134,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </main>
     <script>
     const loginToken = <?= json_encode($loginToken ?? null, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+    const redirectPage = <?= json_encode($redirectPage ?? 'home', JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
     if (loginToken) {
         localStorage.setItem('uniflow_token', loginToken);
-        window.location.replace('index.php?page=home');
+        window.location.replace('index.php?page=' + redirectPage);
     }
     document.querySelector('.reveal')?.addEventListener('click', function () {
         const field = document.querySelector('#password');

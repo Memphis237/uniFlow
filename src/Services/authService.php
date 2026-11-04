@@ -28,7 +28,7 @@ function auth_create_token(array $user): string
 {
     $now = time();
     $header = auth_base64url_encode(json_encode(['typ' => 'JWT', 'alg' => 'HS256'], JSON_THROW_ON_ERROR));
-    $payload = auth_base64url_encode(json_encode(['sub' => (int) $user['Id_users'], 'name' => $user['name'], 'email' => $user['email'], 'iat' => $now, 'exp' => $now + 3600], JSON_THROW_ON_ERROR));
+    $payload = auth_base64url_encode(json_encode(['sub' => (int) $user['Id_users'], 'name' => $user['name'], 'email' => $user['email'], 'role' => $user['role'] ?? 'student', 'iat' => $now, 'exp' => $now + 3600], JSON_THROW_ON_ERROR));
     $signature = auth_base64url_encode(hash_hmac('sha256', $header . '.' . $payload, auth_jwt_secret(), true));
     return $header . '.' . $payload . '.' . $signature;
 }
@@ -55,7 +55,20 @@ function auth_user_from_cookie(): ?array
     if (!is_string($token) || $token === '') return null;
     $claims = auth_decode_token($token);
     if ($claims === null) return null;
-    $query = db()->prepare('SELECT Id_users, name, email FROM Users WHERE Id_users = :id AND status = :status LIMIT 1');
+    $query = db()->prepare('SELECT Id_users, name, first_name, email, role FROM Users WHERE Id_users = :id AND status = :status LIMIT 1');
+    $query->execute(['id' => (int) $claims['sub'], 'status' => 'active']);
+    return $query->fetch() ?: null;
+}
+
+function auth_user_from_authorization(): ?array
+{
+    $authorization = $_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? '';
+    if (!is_string($authorization) || !preg_match('/^Bearer\s+(.+)$/i', trim($authorization), $matches)) {
+        return null;
+    }
+    $claims = auth_decode_token(trim($matches[1]));
+    if ($claims === null) return null;
+    $query = db()->prepare('SELECT Id_users, name, first_name, email, role FROM Users WHERE Id_users = :id AND status = :status LIMIT 1');
     $query->execute(['id' => (int) $claims['sub'], 'status' => 'active']);
     return $query->fetch() ?: null;
 }
@@ -65,24 +78,27 @@ function auth_set_cookie(array $user): void
     setcookie('uniflow_token', auth_create_token($user), ['expires' => time() + 3600, 'path' => '/', 'secure' => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off', 'httponly' => true, 'samesite' => 'Lax']);
 }
 
-function auth_handle(string $action, string $name, string $email, string $password): array
+function auth_handle(string $action, string $name, string $email, string $password, string $firstName = ''): array
 {
+    if (!in_array($action, ['login', 'register'], true)) throw new RuntimeException('Action d’authentification inconnue.');
     $email = strtolower(trim($email));
     if (!filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($email) > 255) throw new RuntimeException('Veuillez saisir une adresse e-mail valide.');
     if ($password === '' || strlen($password) > 4096) throw new RuntimeException('Veuillez saisir un mot de passe valide.');
     $pdo = db();
     if ($action === 'register') {
         $name = trim($name);
+        $firstName = trim($firstName);
         if ($name === '' || strlen($name) > 255) throw new RuntimeException('Veuillez saisir votre nom complet (255 caractères maximum).');
         if (strlen($password) < 8) throw new RuntimeException('Votre mot de passe doit contenir au moins 8 caractères.');
+        if ($firstName === '' || strlen($firstName) > 255) throw new RuntimeException('Veuillez saisir votre prénom.');
         $check = $pdo->prepare('SELECT Id_users FROM Users WHERE email = :email LIMIT 1');
         $check->execute(['email' => $email]);
         if ($check->fetch()) throw new RuntimeException('Cette adresse e-mail possède déjà un compte.');
-        $insert = $pdo->prepare('INSERT INTO Users (name, email, password, role, status) VALUES (:name, :email, :password, :role, :status)');
-        $insert->execute(['name' => $name, 'email' => $email, 'password' => password_hash($password, PASSWORD_DEFAULT), 'role' => 'student', 'status' => 'active']);
-        return ['Id_users' => (int) $pdo->lastInsertId(), 'name' => $name, 'email' => $email];
+        $insert = $pdo->prepare('INSERT INTO Users (name, first_name, email, password, role, status) VALUES (:name, :first_name, :email, :password, :role, :status)');
+        $insert->execute(['name' => $name, 'first_name' => $firstName, 'email' => $email, 'password' => password_hash($password, PASSWORD_DEFAULT), 'role' => 'student', 'status' => 'active']);
+        return ['Id_users' => (int) $pdo->lastInsertId(), 'name' => $name, 'first_name' => $firstName, 'email' => $email, 'role' => 'student'];
     }
-    $query = $pdo->prepare('SELECT Id_users, name, email, password FROM Users WHERE email = :email AND status = :status LIMIT 1');
+    $query = $pdo->prepare('SELECT Id_users, name, first_name, email, password, role FROM Users WHERE email = :email AND status = :status LIMIT 1');
     $query->execute(['email' => $email, 'status' => 'active']);
     $user = $query->fetch();
     if (!$user || !password_verify($password, $user['password'])) throw new RuntimeException('Adresse e-mail ou mot de passe incorrect.');

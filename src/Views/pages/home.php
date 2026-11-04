@@ -27,6 +27,10 @@ if ($user === null) {
     header('Location: index.php?mode=login');
     exit;
 }
+if (($user['role'] ?? '') === 'admin') {
+    header('Location: index.php?page=admin');
+    exit;
+}
 ?>
 <!doctype html>
 <html lang="fr">
@@ -44,7 +48,7 @@ if ($user === null) {
     <main class="home-content">
         <span class="eyebrow teal">VOTRE ESPACE UNIFLOW</span>
         <p class="home-kicker">Ravi de vous retrouver</p>
-        <h1>Bonjour, <?= htmlspecialchars($user['name'], ENT_QUOTES, 'UTF-8') ?> <span>👋</span></h1>
+        <h1>Bonjour, <?= htmlspecialchars(trim(($user['first_name'] ?? '') . ' ' . $user['name']), ENT_QUOTES, 'UTF-8') ?> <span>👋</span></h1>
         <p class="home-description">Votre espace est prêt. Les belles collaborations commencent par une rencontre.</p>
         <a href="index.php?page=home" class="submit-button home-button">Découvrir UniFlow <span aria-hidden="true">→</span></a>
         <div class="home-card"><span class="home-card-icon">✦</span><div><strong>Tout commence ici.</strong><p>Connectez-vous à votre communauté et donnez vie à vos projets.</p></div></div>
