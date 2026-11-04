@@ -1,105 +1,12 @@
-<!-- Sidebar Navbar -->
-<aside class="w-64 bg-white border-r border-gray-100 p-5 hidden md:flex flex-col justify-start shrink-0 sticky top-14 min-h-[calc(100vh-3.5rem)]">
-    <div class="space-y-9">
-        
-        <!-- Logo Campuslink -->
-        <div class="flex items-center space-x-2 px-1">
-            <div class="bg-teal-500 text-white p-1.5 rounded-xl">
-                <i data-lucide="graduation-cap" class="w-5 h-5"></i>
-            </div>
-            <span class="text-xl font-extrabold text-gray-900 tracking-tight">campuslink<span class="text-teal-500">.</span></span>
-        </div>
-
-        <!-- Badge Mon Campus -->
-        <div class="bg-emerald-50/50 p-3 rounded-2xl flex items-center space-x-3 border border-emerald-100/60 cursor-pointer hover:bg-emerald-50 transition" onclick="toggleLocationModal()">
-            <div class="bg-white p-2 rounded-xl text-teal-600 shadow-sm border border-teal-50">
-                <i data-lucide="graduation-cap" class="w-4 h-4"></i>
-            </div>
-            <div class="flex-1">
-                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Mon campus</p>
-                <p class="text-xs font-bold text-gray-800">Université de Lyon</p>
-            </div>
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-        </div>
-
-        <!-- Links de Navigation -->
-        <nav class="space-y-1">
-            <p class="px-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Mon espace</p>
-            
-            <a href="#" class="flex items-center space-x-3 px-3 py-2 rounded-xl text-gray-600 hover:bg-gray-50 transition">
-                <i data-lucide="home" class="w-4 h-4"></i>
-                <span class="text-xs font-medium">Découvrir</span>
-            </a>
-
-            <a href="#" class="flex items-center space-x-3 px-3 py-2 rounded-xl bg-emerald-50/80 text-teal-700 font-bold">
-                <i data-lucide="layout-grid" class="w-4 h-4"></i>
-                <span class="text-xs">Tous les services</span>
-            </a>
-
-            <a href="#" class="flex items-center justify-between px-3 py-2 rounded-xl text-gray-600 hover:bg-gray-50 transition">
-                <div class="flex items-center space-x-3">
-                    <i data-lucide="calendar" class="w-4 h-4"></i>
-                    <span class="text-xs font-medium">Mon campus</span>
-                </div>
-                <span class="bg-cyan-100 text-cyan-700 text-[9px] font-bold px-1.5 py-0.5 rounded-md">Nouveau</span>
-            </a>
-
-            <a href="#" class="flex items-center justify-between px-3 py-2 rounded-xl text-gray-600 hover:bg-gray-50 transition">
-                <div class="flex items-center space-x-3">
-                    <i data-lucide="message-square" class="w-4 h-4"></i>
-                    <span class="text-xs font-medium">Messages</span>
-                </div>
-                <span class="bg-teal-600 text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full">2</span>
-            </a>
-
-            <a href="#" class="flex items-center space-x-3 px-3 py-2 rounded-xl text-gray-600 hover:bg-gray-50 transition">
-                <i data-lucide="heart" class="w-4 h-4"></i>
-                <span class="text-xs font-medium">Mes favoris</span>
-            </a>
-        </nav>
-
-        <!-- Card "Ton talent a de la valeur." -->
-        <div class="bg-emerald-50/40 border border-emerald-100/80 rounded-2xl p-4 text-left space-y-3 relative overflow-hidden">
-            <div class="w-7 h-7 bg-emerald-100 text-teal-600 rounded-lg flex items-center justify-center">
-                <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
-            </div>
-            <div>
-                <h4 class="text-xs font-bold text-gray-900">Ton talent a de la valeur.</h4>
-                <p class="text-[11px] text-gray-500 mt-1 leading-relaxed">Partage tes savoir-faire et meuble tes fins de mois.</p>
-            </div>
-            <button onclick="toggleServiceModal()" class="w-full bg-white hover:bg-emerald-50 text-teal-700 border border-emerald-200 font-semibold py-2 px-3 rounded-xl text-xs flex items-center justify-center space-x-1.5 shadow-sm transition">
-                <span>Proposer un service</span>
-                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-            </button>
-        </div>
-    </div>
-
-    <!-- Liens du bas & Profil utilisateur Alex Martin -->
-    <div class="space-y-3 border-t border-gray-100">
-        <div class="space-y-0.5">
-            <a href="#" class="flex items-center space-x-3 px-3 py-1.5 rounded-lg text-gray-500 hover:bg-gray-50 text-xs font-medium">
-                <i data-lucide="user" class="w-4 h-4"></i>
-                <span>Mon profil</span>
-            </a>
-            <a href="#" class="flex items-center space-x-3 px-3 py-1.5 rounded-lg text-gray-500 hover:bg-gray-50 text-xs font-medium">
-                <i data-lucide="help-circle" class="w-4 h-4"></i>
-                <span>Aide & conseils</span>
-            </a>
-            <a href="#" class="flex items-center space-x-3 px-3 py-1.5 rounded-lg text-gray-400 hover:bg-gray-50 text-xs font-medium">
-                <i data-lucide="log-out" class="w-4 h-4"></i>
-                <span>Se déconnecter</span>
-            </a>
-        </div>
-
-        <div class="flex items-center justify-between p-2 rounded-xl hover:bg-gray-50 cursor-pointer border border-transparent hover:border-gray-100">
-            <div class="flex items-center space-x-2.5">
-                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=100" class="w-8 h-8 rounded-full object-cover" alt="Alex Martin">
-                <div>
-                    <p class="text-xs font-bold text-gray-800">Alex Martin</p>
-                    <p class="text-[10px] text-gray-400">Étudiant vérifié</p>
-                </div>
-            </div>
-            <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
-        </div>
-    </div>
+<?php $navItems = [['home','Découvrir','house'],['services','Tous les services','layout-grid'],['campus','Mon campus','calendar-days'],['messages','Messages','message-square'],['favorites','Mes favoris','heart']]; ?>
+<aside class="hidden md:flex fixed top-0 bottom-0 left-0 w-[260px] bg-white border-r border-slate-200 p-5 flex-col z-40">
+ <a href="index.php?page=home" class="flex items-center gap-2 mb-9 px-1"><span class="rounded-xl bg-teal-600 text-white p-2"><i data-lucide="graduation-cap" class="w-6 h-6"></i></span><span class="text-xl font-extrabold tracking-tight text-slate-900">UniFlow<span class="text-teal-600">.</span></span></a>
+ <button onclick="toggleLocationModal()" class="mb-8 rounded-2xl border border-slate-200 p-3 flex items-center gap-3 text-left hover:bg-slate-50"><span class="rounded-xl bg-teal-50 p-2 text-teal-600"><i data-lucide="graduation-cap" class="w-5 h-5"></i></span><span class="flex-1"><b class="block text-sm">Mon campus</b><small class="text-slate-500">Université de Lyon</small></span><i data-lucide="circle" class="w-2 h-2 fill-teal-500 text-teal-500"></i></button>
+ <p class="text-[11px] uppercase tracking-[.2em] font-bold text-slate-400 px-3 mb-3">Mon espace</p>
+ <nav class="space-y-1">
+ <?php foreach ($navItems as [$key,$label,$icon]): ?><a href="index.php?page=<?= $key ?>" <?= ($currentPage ?? '') === $key ? 'aria-current="page"' : '' ?> class="flex items-center gap-3 px-3 py-3 rounded-xl <?= ($currentPage ?? '') === $key ? 'bg-teal-50 text-teal-700 font-semibold' : 'text-slate-600 hover:bg-slate-50' ?>"><i data-lucide="<?= $icon ?>" class="w-5 h-5"></i><?= $label ?><?php if($key==='campus'): ?><small class="ml-auto rounded bg-cyan-50 text-cyan-700 px-1.5 py-0.5">Nouveau</small><?php elseif($key==='messages'): ?><b class="ml-auto rounded-full bg-teal-600 text-white text-xs px-2 py-1">2</b><?php endif; ?></a><?php endforeach; ?>
+ </nav>
+ <div class="mt-8 rounded-2xl bg-teal-50 border border-teal-100 p-4"><i data-lucide="sparkles" class="w-5 h-5 text-teal-600 mb-2"></i><b class="block text-sm">Ton talent a de la valeur.</b><p class="text-xs text-slate-500 mt-1 mb-3">Partage tes savoir-faire et meuble tes fins de mois.</p><button onclick="toggleServiceModal()" class="w-full bg-white rounded-lg border border-teal-100 py-2 text-sm text-teal-700">Proposer un service +</button></div>
+ <div class="mt-auto border-t border-slate-100 pt-4 space-y-1"><a href="index.php?page=profile" class="flex items-center gap-3 px-3 py-2 rounded-lg <?= ($currentPage??'')==='profile'?'bg-teal-50 text-teal-700':'text-slate-500 hover:bg-slate-50' ?>"><i data-lucide="user-round" class="w-5 h-5"></i> Mon profil</a><a href="index.php?page=help" class="flex items-center gap-3 px-3 py-2 text-slate-500 hover:bg-slate-50"><i data-lucide="circle-help" class="w-5 h-5"></i> Aide & conseils</a><a href="index.php?page=<?= htmlspecialchars($currentPage ?? 'home', ENT_QUOTES, 'UTF-8') ?>&amp;logout=1" class="flex items-center gap-3 px-3 py-2 text-slate-500 hover:bg-slate-50"><i data-lucide="log-out" class="w-5 h-5"></i> Se déconnecter</a><div class="pt-3 flex items-center gap-3"><span class="w-9 h-9 rounded-full bg-teal-100 text-teal-800 flex items-center justify-center font-bold"><?= htmlspecialchars(mb_strtoupper(mb_substr($userName, 0, 1)), ENT_QUOTES, 'UTF-8') ?></span><span><b class="block text-sm"><?= htmlspecialchars($userName, ENT_QUOTES, 'UTF-8') ?></b><small class="text-slate-500">Étudiant vérifié</small></span></div></div>
 </aside>
+<main class="w-full md:ml-[260px] min-w-0">

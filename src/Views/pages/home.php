@@ -1,57 +1,27 @@
 <?php
 declare(strict_types=1);
-
 require_once __DIR__ . '/../../Services/authService.php';
-
-if (isset($_GET['logout'])) {
-    setcookie('uniflow_token', '', [
-        'expires' => time() - 3600,
-        'path' => '/',
-        'secure' => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
-        'httponly' => true,
-        'samesite' => 'Lax',
-    ]);
-    header('Location: index.php');
-    exit;
-}
-
-try {
-    $user = auth_user_from_cookie();
-} catch (Throwable $exception) {
-    error_log($exception->__toString());
-    http_response_code(503);
-    exit('Service temporairement indisponible. Vérifiez la configuration de l’application.');
-}
-
-if ($user === null) {
-    header('Location: index.php?mode=login');
-    exit;
-}
-if (($user['role'] ?? '') === 'admin') {
-    header('Location: index.php?page=admin');
-    exit;
-}
+if (isset($_GET['logout'])) { setcookie('uniflow_token', '', ['expires'=>time()-3600,'path'=>'/','secure'=>!empty($_SERVER['HTTPS'])&&$_SERVER['HTTPS']!=='off','httponly'=>true,'samesite'=>'Lax']); header('Location: index.php'); exit; }
+try { $user=auth_user_from_cookie(); } catch(Throwable $exception) { error_log($exception->__toString()); http_response_code(503); exit('Service temporairement indisponible.'); }
+if($user===null){header('Location: index.php?mode=login');exit;}
+if(($user['role']??'')==='admin'){header('Location: index.php?page=admin');exit;}
+$currentPage='home';$pageTitle='Découvrir';require __DIR__.'/../components/serviceData.php';
+require __DIR__.'/../components/header.php';require __DIR__.'/../components/navBar.php';
+$firstName=(string)($user['first_name']??'');
 ?>
-<!doctype html>
-<html lang="fr">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Accueil — UniFlow</title>
-    <link rel="stylesheet" href="assets/css/auth.css">
-</head>
-<body class="home-page">
-    <header class="home-nav">
-        <a class="brand" href="index.php?page=home"><span class="brand-mark">u</span><span>uni<span>flow</span></span></a>
-        <a class="logout" href="index.php?page=home&amp;logout=1">Se déconnecter <span aria-hidden="true">↗</span></a>
-    </header>
-    <main class="home-content">
-        <span class="eyebrow teal">VOTRE ESPACE UNIFLOW</span>
-        <p class="home-kicker">Ravi de vous retrouver</p>
-        <h1>Bonjour, <?= htmlspecialchars(trim(($user['first_name'] ?? '') . ' ' . $user['name']), ENT_QUOTES, 'UTF-8') ?> <span>👋</span></h1>
-        <p class="home-description">Votre espace est prêt. Les belles collaborations commencent par une rencontre.</p>
-        <a href="index.php?page=home" class="submit-button home-button">Découvrir UniFlow <span aria-hidden="true">→</span></a>
-        <div class="home-card"><span class="home-card-icon">✦</span><div><strong>Tout commence ici.</strong><p>Connectez-vous à votre communauté et donnez vie à vos projets.</p></div></div>
-    </main>
-</body>
-</html>
+<section class="px-5 md:px-8 py-8 max-w-[1500px] mx-auto">
+ <p class="text-[11px] tracking-[.22em] font-bold text-teal-700 mb-3">LE CAMPUS, EN MIEUX</p>
+ <h1 class="text-3xl md:text-[36px] font-extrabold tracking-tight text-slate-900">Salut <?= htmlspecialchars($firstName !== '' ? $firstName : (string)$user['name'], ENT_QUOTES, 'UTF-8') ?>, bienvenue chez toi <span class="text-teal-600">✧</span></h1>
+ <p class="mt-3 text-sm text-slate-500">Des talents à deux pas. Des petits prix. Et une communauté qui s’entraide.</p>
+ <section class="mt-8 rounded-[28px] bg-[#dcf4f0] overflow-hidden grid lg:grid-cols-2 min-h-[420px]">
+  <div class="p-7 md:p-9 lg:p-10 flex flex-col justify-center"><p class="text-[11px] font-semibold tracking-[.18em] text-teal-700">● &nbsp;ENTRE ÉTUDIANTS, TOUT SIMPLEMENT</p><h2 class="mt-5 text-4xl md:text-[46px] leading-[1.12] font-extrabold tracking-tight text-slate-900">Un coup de main.<br>Un petit prix.<br><span class="text-teal-600">Un grand lien.</span></h2><p class="mt-4 max-w-md text-sm leading-6 text-slate-600">Une coupe, un cours, un déménagement…<br>Trouve le bon talent sur ton campus,<br>ou partage le tien.</p><div class="mt-5 flex flex-wrap items-center gap-4"><a href="index.php?page=services" class="rounded-lg bg-[#124340] text-white px-5 py-3 font-semibold text-sm flex items-center gap-3">Trouver un service <i data-lucide="arrow-right" class="w-4 h-4"></i></a><button onclick="toggleServiceModal()" class="text-sm text-teal-800 flex items-center gap-2">Proposer le mien <i data-lucide="plus" class="w-4 h-4"></i></button></div><p class="mt-5 text-xs text-teal-800">👤 👤 👤 &nbsp; Déjà 1 200 étudiants connectés</p><small class="mt-1 text-xs text-slate-500">Le prochain talent, c’est peut-être toi.</small></div>
+  <div class="relative min-h-[280px]"><img class="absolute inset-0 w-full h-full object-cover" src="https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=1200&q=85" alt="Des étudiants qui se retrouvent sur le campus"><div class="absolute top-6 right-5 rounded-xl bg-white/95 p-4 shadow-lg"><b class="block text-sm">✓ &nbsp;100 % étudiants</b><small class="text-slate-500">Des profils vérifiés, en confiance.</small></div><div class="absolute bottom-5 right-5 rounded-xl bg-white/95 px-4 py-3 text-sm text-teal-800">♡ &nbsp;Le talent, pas le prix fort.</div></div>
+ </section>
+ <div class="py-5 grid grid-cols-2 lg:grid-cols-4 gap-4 text-xs text-slate-500"><span>♧ &nbsp;Des étudiants vérifiés</span><span>♡ &nbsp;Des prix vraiment étudiants</span><span>▤ &nbsp;Des échanges en direct</span><span>⌖ &nbsp;Tout près de chez toi</span></div>
+ <div class="grid xl:grid-cols-[minmax(0,1fr)_270px] gap-7 mt-4"><div class="min-w-0 border-t border-slate-200 pt-6"><div class="flex justify-between items-start"><div><h2 class="text-2xl font-bold">De quoi as-tu besoin ?</h2><p class="mt-2 text-sm text-slate-500">Les bons talents, juste à côté.</p></div><a href="index.php?page=services" class="text-sm text-teal-700 flex items-center gap-2">Tout voir <i data-lucide="arrow-right" class="w-4 h-4"></i></a></div>
+ <?php require __DIR__.'/../components/serviceSearch.php'; ?>
+ <div class="mt-7 mb-4 flex items-center justify-between"><h2 class="text-lg font-bold">Les talents à découvrir</h2><span class="text-xs text-slate-400">● Près de ton campus</span></div><div class="service-grid grid md:grid-cols-2 xl:grid-cols-3 gap-4">
+ <?php foreach(array_slice($services,0,3) as $service){require __DIR__.'/../components/serviceCard.php';} ?><p id="emptyResults" class="hidden md:col-span-2 xl:col-span-3 py-10 text-center text-sm text-slate-500">Aucun service ne correspond à ces filtres.</p></div>
+ </div><aside class="hidden xl:block border-l border-slate-200 pl-6 pt-6"><h2 class="font-bold">Ça bouge sur le campus</h2><div class="mt-5 bg-white border border-slate-200 rounded-2xl overflow-hidden"><img class="h-36 w-full object-cover" src="https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=700&q=80" alt="Événement étudiant"><div class="p-4"><small class="text-teal-700">◈ BDE Campus Lyon</small><h3 class="mt-3 text-lg font-bold">Afterwork de rentrée</h3><p class="mt-2 text-sm text-slate-500">On se retrouve, on échange, on commence l’année ensemble.</p><p class="mt-4 text-xs text-slate-500">⌖ Le Rooftop · Lyon</p><a href="index.php?page=campus" class="mt-4 block rounded-lg bg-teal-600 text-white text-center py-3 text-sm">Ça m’intéresse →</a></div></div></aside></div>
+</section>
+<?php require __DIR__.'/../components/footer.php'; ?>

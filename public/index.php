@@ -38,8 +38,17 @@ if (($_GET['page'] ?? '') === 'home') {
     require __DIR__ . '/../src/Views/pages/home.php';
     exit;
 }
+if (($_GET['page'] ?? '') === 'services') {
+    require __DIR__ . '/../src/Views/pages/services.php';
+    exit;
+}
 if (($_GET['page'] ?? '') === 'admin') {
     require __DIR__ . '/../src/Views/pages/admin.php';
+    exit;
+}
+$simplePages = ['campus', 'messages', 'favorites', 'profile', 'help'];
+if (in_array($_GET['page'] ?? '', $simplePages, true)) {
+    require __DIR__ . '/../src/Views/pages/welcome.php';
     exit;
 }
 
