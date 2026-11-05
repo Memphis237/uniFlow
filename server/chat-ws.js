@@ -58,6 +58,17 @@ server.on('upgrade', (req, socket, head) => {
       };
       ws.on('close', disconnect);
       ws.on('error', disconnect);
+      ws.on('message', raw => {
+        if (ws.conversation <= 0) return;
+        try {
+          const message = JSON.parse(raw.toString());
+          if (message.type !== 'typing') return;
+          const event = JSON.stringify({ type: 'typing', conversation: ws.conversation, userId: ws.userId, active: Boolean(message.active) });
+          for (const client of clients) {
+            if (client !== ws && client.readyState === 1 && client.conversation === ws.conversation) client.send(event);
+          }
+        } catch {}
+      });
       ws.send(JSON.stringify({ type: 'connected' }));
       for (const client of clients) if (client !== ws && client.readyState === 1 && client.conversation === ws.conversation && ws.conversation > 0) client.send(JSON.stringify({ type: 'presence', conversation: ws.conversation, userId: ws.userId, online: true }));
     });
