@@ -13,6 +13,8 @@ CREATE TABLE Users (
     password VARCHAR(255) NOT NULL,
     adresse VARCHAR(255),
     postal_code VARCHAR(20),
+    city VARCHAR(120),
+    country VARCHAR(120),
     phone VARCHAR(30),
     is_online BOOLEAN DEFAULT FALSE,
     last_seen DATETIME,
