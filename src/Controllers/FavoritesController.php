@@ -155,6 +155,7 @@ final class FavoritesController
         if (session_status() !== PHP_SESSION_ACTIVE) {
             session_start();
         }
+        $returnTo = ($_POST['return_to'] ?? '') === 'modern' ? 'page=services' : 'action=services';
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             http_response_code(405);
             header('Allow: POST');
@@ -165,7 +166,7 @@ final class FavoritesController
         $token = $_POST['csrf_token'] ?? '';
         if (!is_string($token) || !isset($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $token)) {
             $_SESSION['favorites_error'] = 'Votre session a expiré. Recharge la page avant de réessayer.';
-            header('Location: ?action=services', true, 303);
+            header('Location: ?' . $returnTo, true, 303);
             return;
         }
 
@@ -174,7 +175,7 @@ final class FavoritesController
         ]);
         if ($serviceId === false) {
             $_SESSION['favorites_error'] = 'Le service sélectionné est invalide.';
-            header('Location: ?action=services', true, 303);
+            header('Location: ?' . $returnTo, true, 303);
             return;
         }
 
@@ -198,7 +199,7 @@ final class FavoritesController
             $_SESSION['favorites_error'] = 'La configuration de l’utilisateur est invalide.';
         }
 
-        header('Location: ?action=services', true, 303);
+        header('Location: ?' . $returnTo, true, 303);
     }
 
     private function renderPage(bool $onlyFavorites): void
@@ -248,7 +249,7 @@ final class FavoritesController
         $pageTitle = $onlyFavorites ? 'Mes favoris' : 'Tous les services';
         $currentAction = $onlyFavorites ? 'favorites' : 'services';
         $showCreateForm = !$onlyFavorites && (($_GET['add'] ?? '') === '1' || $serviceFormErrors !== [] || $serviceFormError !== null);
-        require __DIR__ . '/../Views/pages/' . $currentAction . '.php';
+        require __DIR__ . '/../Views/pages/legacyServices.php';
     }
 
     private function submittedService(): array

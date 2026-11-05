@@ -1,2 +1,3 @@
 <?php
-require __DIR__ . '/services.php';
+$currentAction = 'favorites';
+require __DIR__ . '/legacyServices.php';

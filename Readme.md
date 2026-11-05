@@ -1,18 +1,24 @@
-# UniFlow — profil utilisateur
+# UniFlow
 
-## Configuration de la base de données
+## Configuration locale
 
-1. Copiez `.env.exemple` vers `.env`, puis adaptez les paramètres de connexion MySQL. Les valeurs proposées correspondent à une installation MAMP locale classique.
-2. Pour une nouvelle base, importez `src/database/schema.sql` dans MySQL.
-3. Pour une base UniFlow déjà créée, appliquez une seule fois `src/database/migrations/20261103_add_profile_fields.sql` ; ne lancez pas cette migration après avoir importé le schéma à jour.
-4. Réglez `DB_PROFILE_USER_ID` sur l’identifiant du profil à afficher. Si l’application dispose d’une session avec `user_id`, cet identifiant de session est utilisé à la place.
+1. Copiez `.env.exemple` vers `.env`, puis renseignez les accès MySQL et un `JWT_SECRET` aléatoire d’au moins 32 caractères. Ne partagez jamais `.env`.
+2. Pour une nouvelle base, importez `src/database/schema.sql`.
+3. Pour une base existante, appliquez les migrations pertinentes de `src/database/migrations/` une seule fois ; certaines migrations de profil/favoris peuvent précéder celles de `develop`.
+4. Servez `public/` avec Apache/MAMP. Pour les messages en temps réel, installez les dépendances Node (`npm install`) puis démarrez le relais avec `npm run chat:ws`.
 
-Le formulaire permet de modifier le nom, le prénom, l’e-mail, la formation, l’école, la biographie et l’URL de l’avatar. Les modifications sont validées puis enregistrées dans la table `Users`.
+L’application comprend l’inscription et la connexion avec mots de passe hachés, une session JWT en cookie HttpOnly, le profil utilisateur, le catalogue de services, les favoris, les réservations, les avis et les messages. En production, utilisez HTTPS.
 
-## Favoris
+## Profil, services et favoris
 
-Les services actifs apparaissent dans `?action=services`. Les boutons ajoutent ou retirent un service des favoris ; `?action=favorites` affiche la liste enregistrée pour l’utilisateur courant. Chaque modification est envoyée en POST avec un jeton CSRF. Les favoris sont liés à `DB_PROFILE_USER_ID` jusqu’à ce que l’authentification fournisse `$_SESSION['user_id']`.
+Le profil se trouve sur `index.php?page=profile`. Le catalogue (`index.php?page=services`) permet de publier des services et des images. Les pages de favoris sont accessibles depuis la navigation ; les anciennes routes `?action=favorites` et `?action=services` restent disponibles.
 
-La base locale de démonstration a aussi des services exemples. Pour repeupler un environnement de développement vide après avoir importé le schéma et créé l’utilisateur 1, exécute `src/database/seed_demo_services.sql`.
+Les services créés par l’utilisateur peuvent être supprimés tant qu’ils ne sont pas liés à une réservation ou à un avis. Les images téléversées sont limitées aux formats vérifiés côté serveur et sont stockées sous `public/uploads/`.
 
-Le formulaire du catalogue permet de publier un service, d’importer une image JPG/PNG/WebP/GIF (5 Mo maximum) ou de coller le lien direct d’une image publique (`http://` ou `https://`). Pour utiliser une image Google, enregistre-la d’abord sur ton appareil puis importe le fichier : les liens des résultats Google renvoient souvent vers une page et ne sont pas des liens d’image partageables. Les services créés par l’utilisateur courant peuvent être supprimés depuis leur carte ; une réservation ou un avis lié empêche la suppression. Pour une base créée avant cette évolution, applique aussi `src/database/migrations/20261103_expand_media_file_path.sql` afin que `Media.file_path` accepte les liens longs.
+Les migrations présentes dans `src/database/migrations/` ajoutent les champs de profil et élargissent le chemin des médias. Appliquez-les uniquement si ces changements ne sont pas déjà dans votre base.
+
+## Messagerie en temps réel
+
+Installez les dépendances Node puis lancez `npm run chat:ws`. Le relais écoute `127.0.0.1:8081` par défaut. Le chat conserve un mode de secours par interrogation périodique.
+
+Pour une base antérieure à la messagerie, vérifiez `Messages.delivered_at` et `Message_attachments` dans `src/database/schema.sql` et appliquez les adaptations manquantes. La configuration PHP doit autoriser les pièces jointes selon les limites configurées (`upload_max_filesize` et `post_max_size`).

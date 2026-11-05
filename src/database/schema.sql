@@ -1,4 +1,3 @@
-
 CREATE DATABASE IF NOT EXISTS uniflow
 CHARACTER SET utf8mb4
 COLLATE utf8mb4_unicode_ci;
@@ -9,15 +8,22 @@ USE uniflow;
 CREATE TABLE Users (
     Id_users INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
-    prénom VARCHAR(255) NOT NULL,
-    email VARCHAR(255) NOT NULL UNIQUE,
+    first_name VARCHAR(255) NOT NULL,
+    email VARCHAR(100) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
     adresse VARCHAR(255),
+    postal_code VARCHAR(20),
+    city VARCHAR(120),
+    country VARCHAR(120),
+    phone VARCHAR(30),
+    is_online BOOLEAN DEFAULT FALSE,
+    last_seen DATETIME,
     role VARCHAR(50) NOT NULL DEFAULT 'student',
     biographie VARCHAR(1000),
     avatar VARCHAR(255),
     formation VARCHAR(255),
     ecole VARCHAR(255),
+    cover_image VARCHAR(255),
     status VARCHAR(50) NOT NULL DEFAULT 'active',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -36,7 +42,8 @@ CREATE TABLE Services (
     price DECIMAL(15,2) NOT NULL DEFAULT 0.00,
     location VARCHAR(255),
     status VARCHAR(50) NOT NULL DEFAULT 'active',
-    description VARCHAR(255),
+    description TEXT,
+    unit VARCHAR(80) NOT NULL DEFAULT 'la prestation',
     Id_categories INT NOT NULL,
     Id_users INT NOT NULL,
 
@@ -85,6 +92,7 @@ CREATE TABLE Messages (
     Id_messages INT AUTO_INCREMENT PRIMARY KEY,
     content TEXT NOT NULL,
     read_at DATETIME NULL,
+    delivered_at DATETIME NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     Id_users INT NOT NULL,
     Id_conversations INT NOT NULL,
@@ -96,6 +104,21 @@ CREATE TABLE Messages (
 
     FOREIGN KEY (Id_conversations)
         REFERENCES Conversations(Id_conversations)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE
+);
+
+-- 6.1 Fichiers joints des messages
+CREATE TABLE Message_attachments (
+    Id_attachments INT AUTO_INCREMENT PRIMARY KEY,
+    Id_messages INT NOT NULL,
+    name_original VARCHAR(255) NOT NULL,
+    file_path VARCHAR(255) NOT NULL,
+    mime_type VARCHAR(120) NOT NULL,
+    file_size BIGINT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (Id_messages)
+        REFERENCES Messages(Id_messages)
         ON UPDATE CASCADE
         ON DELETE CASCADE
 );
