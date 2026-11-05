@@ -90,6 +90,7 @@ CREATE TABLE Messages (
     Id_messages INT AUTO_INCREMENT PRIMARY KEY,
     content TEXT NOT NULL,
     read_at DATETIME NULL,
+    delivered_at DATETIME NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     Id_users INT NOT NULL,
     Id_conversations INT NOT NULL,
@@ -101,6 +102,21 @@ CREATE TABLE Messages (
 
     FOREIGN KEY (Id_conversations)
         REFERENCES Conversations(Id_conversations)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE
+);
+
+-- 6.1 Fichiers joints des messages
+CREATE TABLE Message_attachments (
+    Id_attachments INT AUTO_INCREMENT PRIMARY KEY,
+    Id_messages INT NOT NULL,
+    name_original VARCHAR(255) NOT NULL,
+    file_path VARCHAR(255) NOT NULL,
+    mime_type VARCHAR(120) NOT NULL,
+    file_size BIGINT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (Id_messages)
+        REFERENCES Messages(Id_messages)
         ON UPDATE CASCADE
         ON DELETE CASCADE
 );
