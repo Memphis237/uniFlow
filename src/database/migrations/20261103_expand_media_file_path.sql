@@ -1,0 +1,2 @@
+ALTER TABLE Media
+    MODIFY COLUMN file_path TEXT NOT NULL;

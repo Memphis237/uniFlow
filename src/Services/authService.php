@@ -78,6 +78,19 @@ function auth_set_cookie(array $user): void
     setcookie('uniflow_token', auth_create_token($user), ['expires' => time() + 3600, 'path' => '/', 'secure' => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off', 'httponly' => true, 'samesite' => 'Lax']);
 }
 
+function auth_has_legacy_prenom_column(PDO $pdo): bool
+{
+    $query = $pdo->prepare(
+        'SELECT COUNT(*)
+         FROM INFORMATION_SCHEMA.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE()
+           AND TABLE_NAME = :table
+           AND COLUMN_NAME = :column'
+    );
+    $query->execute(['table' => 'Users', 'column' => 'prénom']);
+    return (int) $query->fetchColumn() > 0;
+}
+
 function auth_handle(string $action, string $name, string $email, string $password, string $firstName = ''): array
 {
     if (!in_array($action, ['login', 'register'], true)) throw new RuntimeException('Action d’authentification inconnue.');
@@ -94,8 +107,23 @@ function auth_handle(string $action, string $name, string $email, string $passwo
         $check = $pdo->prepare('SELECT Id_users FROM Users WHERE email = :email LIMIT 1');
         $check->execute(['email' => $email]);
         if ($check->fetch()) throw new RuntimeException('Cette adresse e-mail possède déjà un compte.');
-        $insert = $pdo->prepare('INSERT INTO Users (name, first_name, email, password, role, status) VALUES (:name, :first_name, :email, :password, :role, :status)');
-        $insert->execute(['name' => $name, 'first_name' => $firstName, 'email' => $email, 'password' => password_hash($password, PASSWORD_DEFAULT), 'role' => 'student', 'status' => 'active']);
+        $columns = 'name, first_name, email, password, role, status';
+        $values = ':name, :first_name, :email, :password, :role, :status';
+        $parameters = [
+            'name' => $name,
+            'first_name' => $firstName,
+            'email' => $email,
+            'password' => password_hash($password, PASSWORD_DEFAULT),
+            'role' => 'student',
+            'status' => 'active',
+        ];
+        if (auth_has_legacy_prenom_column($pdo)) {
+            $columns .= ', `prénom`';
+            $values .= ', :legacy_first_name';
+            $parameters['legacy_first_name'] = $firstName;
+        }
+        $insert = $pdo->prepare("INSERT INTO Users ({$columns}) VALUES ({$values})");
+        $insert->execute($parameters);
         return ['Id_users' => (int) $pdo->lastInsertId(), 'name' => $name, 'first_name' => $firstName, 'email' => $email, 'role' => 'student'];
     }
     $query = $pdo->prepare('SELECT Id_users, name, first_name, email, password, role FROM Users WHERE email = :email AND status = :status LIMIT 1');

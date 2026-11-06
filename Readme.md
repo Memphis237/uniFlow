@@ -1,37 +1,24 @@
-# UniFlow — authentification
+# UniFlow
 
 ## Configuration locale
 
-1. Créez un fichier .env à la racine en copiant .env.exemple, puis renseignez les accès MySQL.
-2. Remplacez JWT_SECRET par une clé privée aléatoire d'au moins 32 caractères. Ne partagez pas ce secret.
-3. Importez src/database/schema.sql dans MySQL. La table Users doit contenir les colonnes name, email, password, role et status définies dans ce schéma.
-4. Servez le projet avec Apache/WampServer et ouvrez public/index.php. La page protégée et son contrôle JWT se trouvent dans src/Views/pages/home.php.
+1. Copiez `.env.exemple` vers `.env`, puis renseignez les accès MySQL et un `JWT_SECRET` aléatoire d’au moins 32 caractères. Ne partagez jamais `.env`.
+2. Pour une nouvelle base, importez `src/database/schema.sql`.
+3. Pour une base existante, appliquez les migrations pertinentes de `src/database/migrations/` une seule fois ; certaines migrations de profil/favoris peuvent précéder celles de `develop`.
+4. Servez `public/` avec Apache/MAMP. Pour les messages en temps réel, installez les dépendances Node (`npm install`) puis démarrez le relais avec `npm run chat:ws`.
 
-Si la base existe déjà, exécutez une seule fois `src/database/migrations/20261028_normalize_first_name.sql` avant d'utiliser le formulaire mis à jour. Les nouveaux comptes reçoivent le rôle `student`; pour donner l'accès admin à un compte, changez son rôle en `admin` dans la table `Users`.
+L’application comprend l’inscription et la connexion avec mots de passe hachés, une session JWT en cookie HttpOnly, le profil utilisateur, le catalogue de services, les favoris, les réservations, les avis et les messages. En production, utilisez HTTPS.
 
-L'inscription stocke les mots de passe avec password_hash; la connexion les valide avec password_verify. Les accès SQL utilisent PDO et des requêtes préparées. Le JWT HS256 est signé côté serveur et placé dans un cookie HttpOnly, SameSite=Lax, valable une heure. En production, utilisez HTTPS pour que le cookie soit également marqué Secure.
+## Profil, services et favoris
 
+Le profil se trouve sur `index.php?page=profile`. Le catalogue (`index.php?page=services`) permet de publier des services et des images. Les pages de favoris sont accessibles depuis la navigation ; les anciennes routes `?action=favorites` et `?action=services` restent disponibles.
 
-## Chat temps reel
+Les services créés par l’utilisateur peuvent être supprimés tant qu’ils ne sont pas liés à une réservation ou à un avis. Les images téléversées sont limitées aux formats vérifiés côté serveur et sont stockées sous `public/uploads/`.
 
-Install the Node dependencies with `npm install`, then start the WebSocket relay alongside WampServer using `npm run chat:ws`. It listens on `127.0.0.1:8081` by default. The app keeps a short polling fallback if the relay is stopped. Import the updated `src/database/schema.sql`; existing databases need `Messages.delivered_at` and the `Message_attachments` table.
+Les migrations présentes dans `src/database/migrations/` ajoutent les champs de profil et élargissent le chemin des médias. Appliquez-les uniquement si ces changements ne sont pas déjà dans votre base.
 
-For an existing database, run once (skip the `ALTER TABLE` if the column already exists):
+## Messagerie en temps réel
 
-```sql
-ALTER TABLE Messages ENGINE=InnoDB;
-ALTER TABLE Messages ADD COLUMN delivered_at DATETIME NULL AFTER read_at;
-CREATE TABLE Message_attachments (
-    Id_attachments INT AUTO_INCREMENT PRIMARY KEY,
-    Id_messages INT NOT NULL,
-    name_original VARCHAR(255) NOT NULL,
-    file_path VARCHAR(255) NOT NULL,
-    mime_type VARCHAR(120) NOT NULL,
-    file_size BIGINT NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (Id_messages) REFERENCES Messages(Id_messages)
-        ON UPDATE CASCADE ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-```
+Installez les dépendances Node puis lancez `npm run chat:ws`. Le relais écoute `127.0.0.1:8081` par défaut. Le chat conserve un mode de secours par interrogation périodique.
 
-For attachments up to 8 MB, set `upload_max_filesize=8M` and `post_max_size=24M` in the PHP configuration used by WampServer, then restart Apache.
+Pour une base antérieure à la messagerie, vérifiez `Messages.delivered_at` et `Message_attachments` dans `src/database/schema.sql` et appliquez les adaptations manquantes. La configuration PHP doit autoriser les pièces jointes selon les limites configurées (`upload_max_filesize` et `post_max_size`).

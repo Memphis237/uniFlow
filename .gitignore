@@ -1,3 +1,7 @@
 .env
+.env.*
+!.env.exemple
+/public/uploads/services/*
+!/public/uploads/services/.htaccess
 docs/
 node_modules/

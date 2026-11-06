@@ -8,6 +8,13 @@ if (isset($_GET['logout'])) {
 try { $user = auth_user_from_cookie(); } catch (Throwable $exception) { error_log($exception->__toString()); http_response_code(503); exit('Service temporairement indisponible.'); }
 if ($user === null) { header('Location: index.php?mode=login'); exit; }
 if (($user['role'] ?? '') === 'admin') { header('Location: index.php?page=admin'); exit; }
+if (session_status() !== PHP_SESSION_ACTIVE) { session_start(); }
+if (!isset($_SESSION['csrf_token']) || !is_string($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+$serviceActionMessage = $_SESSION['favorites_success'] ?? $_SESSION['favorites_error'] ?? null;
+$serviceActionHasError = isset($_SESSION['favorites_error']);
+unset($_SESSION['favorites_success'], $_SESSION['favorites_error']);
 $currentPage = 'services'; $pageTitle = 'Tous les services';
 require_once __DIR__ . '/../../Services/serviceCatalogService.php';
 $catalog = service_catalog_search(db(), (int)$user['Id_users'], $_GET, true, 24);
@@ -16,6 +23,7 @@ require __DIR__ . '/../components/header.php';
 require __DIR__ . '/../components/navBar.php';
 ?>
 <section class="px-5 md:px-8 py-8 lg:py-9 max-w-[1500px] mx-auto">
+ <?php if ($serviceActionMessage !== null): ?><p class="mb-5 rounded-lg <?= $serviceActionHasError ? 'bg-rose-50 text-rose-700' : 'bg-emerald-50 text-emerald-700' ?> px-4 py-3 text-sm" role="<?= $serviceActionHasError ? 'alert' : 'status' ?>"><?= htmlspecialchars((string) $serviceActionMessage, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
  <p class="text-[11px] tracking-[.22em] font-bold text-teal-700 mb-3">LE CAMPUS, EN MIEUX</p>
  <h1 class="text-3xl md:text-[38px] leading-tight font-extrabold tracking-tight text-slate-900">Un talent pour chaque besoin.</h1>
  <p class="mt-3 text-sm text-slate-500">Des talents à deux pas. Des petits prix. Et une communauté qui s’entraide.</p>

@@ -4,6 +4,33 @@ declare(strict_types=1);
 require_once __DIR__ . '/../src/database/db.php';
 require_once __DIR__ . '/../src/Services/authService.php';
 require_once __DIR__ . '/../src/Services/chatService.php';
+require_once __DIR__ . '/../src/Controllers/FavoritesController.php';
+
+$legacyAction = $_GET['action'] ?? '';
+if ($legacyAction === 'profile') {
+    header('Location: index.php?page=profile', true, 303);
+    exit;
+}
+if (in_array($legacyAction, ['services', 'favorites', 'favorite', 'service-create', 'service-delete'], true)) {
+    $controller = new FavoritesController();
+    if ($legacyAction === 'services') {
+        $controller->services();
+    } elseif ($legacyAction === 'favorites') {
+        $controller->favorites();
+    } elseif ($legacyAction === 'favorite') {
+        $controller->mutate();
+    } elseif ($legacyAction === 'service-create') {
+        $controller->createService();
+    } else {
+        $controller->deleteService();
+    }
+    exit;
+}
+
+if (($_GET['page'] ?? '') === 'favorites') {
+    (new FavoritesController())->favorites();
+    exit;
+}
 
 if (($_GET['api'] ?? '') !== '') {
     header('Content-Type: application/json; charset=utf-8');

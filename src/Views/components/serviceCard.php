@@ -5,4 +5,13 @@
     <div class="latest-comment mt-2 max-h-12 overflow-y-auto rounded-lg bg-slate-50 px-3 py-2 text-[11px] text-slate-500"><?php if($service['reviews']>0): ?><strong class="text-slate-700"><?= htmlspecialchars($service['commenter'], ENT_QUOTES, 'UTF-8') ?></strong> &nbsp;<?= htmlspecialchars($service['comment'], ENT_QUOTES, 'UTF-8') ?><?php else: ?>Aucun avis pour le moment.<?php endif; ?></div>
     <div class="comment-panel hidden mt-2"><div class="comment-list max-h-28 space-y-2 overflow-y-auto overscroll-contain pr-1"></div><form class="comment-form mt-2 flex gap-2"><label class="sr-only">Écrire un commentaire</label><input maxlength="240" class="comment-input min-w-0 flex-1 rounded-lg border border-slate-200 px-3 py-2 text-xs outline-none focus:border-teal-500" placeholder="Écrire un commentaire…" required><button class="rounded-lg bg-teal-600 px-3 py-2 text-xs font-semibold text-white">Envoyer</button></form></div>
     <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between"><span><b class="text-xl"><?= $service['price'] ?> €</b><small class="text-slate-400"> / <?= htmlspecialchars($service['unit'], ENT_QUOTES, 'UTF-8') ?></small></span><button type="button" class="discover-button text-xs text-teal-700 flex items-center gap-1">Découvrir <i data-lucide="arrow-right" class="w-4 h-4"></i></button></div></div>
+    <?php if (($currentPage ?? '') === 'services' && !empty($service['is_owner'])): ?>
+        <form method="post" action="index.php?action=service-delete" class="px-4 pb-4"
+              onsubmit="return confirm('Supprimer ce service ?');">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars((string) ($_SESSION['csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+            <input type="hidden" name="service_id" value="<?= (int) $service['id'] ?>">
+            <input type="hidden" name="return_to" value="modern">
+            <button type="submit" class="rounded-lg border border-rose-200 px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-50">Supprimer mon service</button>
+        </form>
+    <?php endif; ?>
 </article>
