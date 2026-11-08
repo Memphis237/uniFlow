@@ -17,9 +17,9 @@ function service_catalog_category_slug(string $value): string
     };
 }
 
-function service_catalog_search(PDO $pdo,int $viewerId,array $input,bool $searchEnabled=true,int $pageSize=24): array
+function service_catalog_search(PDO $pdo,int $viewerId,array $input,bool $searchEnabled=true,int $pageSize=24,bool $favoritesOnly=false): array
 {
-    $pageSize=max(1,$searchEnabled?$pageSize:3);
+    $pageSize=max(1,$pageSize);
     $filters=['q'=>'','category'=>'all','max_price'=>50,'sort'=>'recommended','page'=>1];
     if($searchEnabled){
         $rawQuery=$input['q']??'';$rawCategory=$input['category']??'all';$rawBudget=$input['max_price']??'50';$rawSort=$input['sort']??'recommended';$rawPage=$input['page_number']??'1';
@@ -29,11 +29,15 @@ function service_catalog_search(PDO $pdo,int $viewerId,array $input,bool $search
         $filters['max_price']=is_scalar($rawBudget)&&is_numeric($rawBudget)?min(500,max(5,(float)$rawBudget)):50;
         $filters['sort']=is_scalar($rawSort)&&in_array((string)$rawSort,$sorts,true)?(string)$rawSort:'recommended';
         $filters['page']=is_scalar($rawPage)&&ctype_digit((string)$rawPage)?max(1,(int)$rawPage):1;
+    }elseif($favoritesOnly){
+        $rawPage=$input['page_number']??'1';
+        $filters['page']=is_scalar($rawPage)&&ctype_digit((string)$rawPage)?max(1,(int)$rawPage):1;
     }
 
     $services=[];$total=0;$pageCount=1;
     try{
         $where=["s.status='active'"];$params=[];
+        if($favoritesOnly){$where[]='EXISTS(SELECT 1 FROM Favorites saved WHERE saved.Id_services=s.Id_services AND saved.Id_users=:favorite_viewer)';$params['favorite_viewer']=$viewerId;}
         if($searchEnabled&&$filters['q']!==''){
             $where[]="CONCAT_WS(' ',s.title,s.description,c.name,u.first_name,u.name,s.location,u.adresse,u.postal_code,u.city,u.country) LIKE :search";
             $params['search']='%'.$filters['q'].'%';
@@ -46,7 +50,7 @@ function service_catalog_search(PDO $pdo,int $viewerId,array $input,bool $search
             else $where[]='1=0';
         }
         $whereSql=implode(' AND ',$where);
-        if($searchEnabled){$count=$pdo->prepare('SELECT COUNT(*) FROM Services s JOIN Categories c ON c.Id_categories=s.Id_categories JOIN Users u ON u.Id_users=s.Id_users WHERE '.$whereSql);$count->execute($params);$total=(int)$count->fetchColumn();$pageCount=max(1,(int)ceil($total/$pageSize));$filters['page']=min($filters['page'],$pageCount);}
+        if($searchEnabled||$favoritesOnly){$count=$pdo->prepare('SELECT COUNT(*) FROM Services s JOIN Categories c ON c.Id_categories=s.Id_categories JOIN Users u ON u.Id_users=s.Id_users WHERE '.$whereSql);$count->execute($params);$total=(int)$count->fetchColumn();$pageCount=max(1,(int)ceil($total/$pageSize));$filters['page']=min($filters['page'],$pageCount);}
         $order=match($filters['sort']){'price-asc'=>'s.price ASC,s.Id_services DESC','rating-desc'=>'rating IS NULL ASC,rating DESC,s.Id_services DESC',default=>'s.Id_services DESC'};
         $offset=($filters['page']-1)*$pageSize;
         $sql="SELECT s.Id_services,s.title,s.price,s.description,s.unit,s.location,s.status,c.name AS category,u.first_name,u.name AS last_name,u.avatar AS owner_avatar,u.adresse,u.postal_code,u.city,u.country,CASE WHEN s.location IS NULL OR s.location='' OR s.location='Campus Lyon' OR s.location=CONCAT_WS(' ',NULLIF(u.city,''),NULLIF(u.country,'')) THEN NULLIF(CONCAT_WS(', ',NULLIF(u.adresse,''),NULLIF(u.postal_code,''),NULLIF(u.city,''),NULLIF(u.country,'')),'') ELSE s.location END AS resolved_location,(SELECT m.file_path FROM Media m WHERE m.Id_services=s.Id_services ORDER BY m.Id_media LIMIT 1) AS image,(SELECT COUNT(*) FROM Favorites f WHERE f.Id_services=s.Id_services) AS likes,EXISTS(SELECT 1 FROM Favorites mine WHERE mine.Id_services=s.Id_services AND mine.Id_users=:viewer) AS liked,(SELECT ROUND(AVG(r.rating),1) FROM Reviews r JOIN Bookings b ON b.Id_bookings=r.Id_bookings WHERE b.Id_services=s.Id_services) AS rating,(SELECT COUNT(*) FROM Reviews r JOIN Bookings b ON b.Id_bookings=r.Id_bookings WHERE b.Id_services=s.Id_services) AS reviews,(SELECT r.comment FROM Reviews r JOIN Bookings b ON b.Id_bookings=r.Id_bookings WHERE b.Id_services=s.Id_services ORDER BY r.created_at DESC LIMIT 1) AS comment,(SELECT CONCAT(ru.first_name,' ',ru.name) FROM Reviews r JOIN Bookings b ON b.Id_bookings=r.Id_bookings JOIN Users ru ON ru.Id_users=r.Id_users WHERE b.Id_services=s.Id_services ORDER BY r.created_at DESC LIMIT 1) AS commenter FROM Services s JOIN Categories c ON c.Id_categories=s.Id_categories JOIN Users u ON u.Id_users=s.Id_users WHERE {$whereSql} ORDER BY {$order} LIMIT :limit OFFSET :offset";

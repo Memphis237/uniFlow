@@ -75,6 +75,10 @@ if (($_GET['page'] ?? '') === 'services') {
     require __DIR__ . '/../src/Views/pages/services.php';
     exit;
 }
+if (($_GET['page'] ?? '') === 'favorites') {
+    require __DIR__ . '/../src/Views/pages/favorites.php';
+    exit;
+}
 if (($_GET['page'] ?? '') === 'messages') { require __DIR__ . '/../src/Views/pages/message.php'; exit; }
 if (($_GET['page'] ?? '') === 'profile') { require __DIR__ . '/../src/Views/pages/profile.php'; exit; }
 if (($_GET['page'] ?? '') === 'logout') { require __DIR__ . '/../src/Services/logout.php'; exit; }
@@ -82,7 +86,7 @@ if (($_GET['page'] ?? '') === 'admin') {
     require __DIR__ . '/../src/Views/pages/admin.php';
     exit;
 }
-$simplePages = ['campus', 'favorites', 'help'];
+$simplePages = ['campus', 'help'];
 if (in_array($_GET['page'] ?? '', $simplePages, true)) {
     require __DIR__ . '/../src/Views/pages/welcome.php';
     exit;
