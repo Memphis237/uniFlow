@@ -78,6 +78,20 @@ function auth_set_cookie(array $user): void
     setcookie('uniflow_token', auth_create_token($user), ['expires' => time() + 3600, 'path' => '/', 'secure' => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off', 'httponly' => true, 'samesite' => 'Lax']);
 }
 
+function auth_login_attempt_state(): array
+{
+    if (session_status() !== PHP_SESSION_ACTIVE) session_start();
+    $state = $_SESSION['auth_login_attempts'] ?? ['count' => 0, 'locked_until' => 0];
+    if (!is_array($state)) $state = ['count' => 0, 'locked_until' => 0];
+    $state['count'] = max(0, (int) ($state['count'] ?? 0));
+    $state['locked_until'] = max(0, (int) ($state['locked_until'] ?? 0));
+    if ($state['locked_until'] > 0 && $state['locked_until'] <= time()) {
+        $state = ['count' => 0, 'locked_until' => 0];
+    }
+    $_SESSION['auth_login_attempts'] = $state;
+    return $state;
+}
+
 function auth_handle(string $action, string $name, string $email, string $password, string $firstName = ''): array
 {
     if (!in_array($action, ['login', 'register'], true)) throw new RuntimeException('Action d’authentification inconnue.');
@@ -98,10 +112,26 @@ function auth_handle(string $action, string $name, string $email, string $passwo
         $insert->execute(['name' => $name, 'first_name' => $firstName, 'email' => $email, 'password' => password_hash($password, PASSWORD_DEFAULT), 'role' => 'student', 'status' => 'active']);
         return ['Id_users' => (int) $pdo->lastInsertId(), 'name' => $name, 'first_name' => $firstName, 'email' => $email, 'role' => 'student'];
     }
+    $attemptState = auth_login_attempt_state();
+    if ($attemptState['locked_until'] > time()) {
+        $remaining = $attemptState['locked_until'] - time();
+        throw new RuntimeException('Connexion temporairement bloquée. Réessayez dans ' . ceil($remaining / 60) . ' minute(s).');
+    }
     $query = $pdo->prepare('SELECT Id_users, name, first_name, email, password, role FROM Users WHERE email = :email AND status = :status LIMIT 1');
     $query->execute(['email' => $email, 'status' => 'active']);
     $user = $query->fetch();
-    if (!$user || !password_verify($password, $user['password'])) throw new RuntimeException('Adresse e-mail ou mot de passe incorrect.');
+    if (!$user || !password_verify($password, $user['password'])) {
+        $attemptState['count']++;
+        if ($attemptState['count'] >= 5) {
+            $attemptState['locked_until'] = time() + 900;
+            $_SESSION['auth_login_attempts'] = $attemptState;
+            throw new RuntimeException('locked:900');
+        }
+        $_SESSION['auth_login_attempts'] = $attemptState;
+        if ($attemptState['count'] === 3) throw new RuntimeException('warning:Adresse e-mail ou mot de passe incorrect. Attention, il vous reste 2 essais avant le blocage temporaire de 15 minutes.');
+        throw new RuntimeException('Adresse e-mail ou mot de passe incorrect.');
+    }
+    $_SESSION['auth_login_attempts'] = ['count' => 0, 'locked_until' => 0];
     if (password_needs_rehash($user['password'], PASSWORD_DEFAULT)) {
         $update = $pdo->prepare('UPDATE Users SET password = :password WHERE Id_users = :id');
         $update->execute(['password' => password_hash($password, PASSWORD_DEFAULT), 'id' => $user['Id_users']]);

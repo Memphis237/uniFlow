@@ -99,6 +99,8 @@ $oldName = '';
 $oldFirstName = '';
 $oldEmail = '';
 $csrf = auth_csrf_token();
+$loginLockedUntil = 0;
+$loginWarning = false;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $mode = (($_POST['action'] ?? '') === 'register') ? 'register' : 'login';
@@ -114,11 +116,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         auth_set_cookie($user);
         $redirectPage = ($user['role'] ?? '') === 'admin' ? 'admin' : 'home';
     } catch (RuntimeException $exception) {
-        $error = $exception->getMessage();
+        $message = $exception->getMessage();
+        if ($message === 'locked:900') {
+            $loginLockedUntil = auth_login_attempt_state()['locked_until'];
+            $error = '';
+        } elseif (str_starts_with($message, 'warning:')) {
+            $loginWarning = true;
+            $error = substr($message, 8);
+        } else {
+            $error = $message;
+        }
     } catch (Throwable $exception) {
         error_log($exception->__toString());
         $error = 'Une erreur est survenue. Vérifiez la configuration de la base de données puis réessayez.';
     }
+}
+if ($mode === 'login' && $loginLockedUntil === 0) {
+    $attemptState = auth_login_attempt_state();
+    $loginLockedUntil = $attemptState['locked_until'];
 }
 ?>
 <!doctype html>
@@ -129,7 +144,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="theme-color" content="#087e8b">
     <title><?= $mode === 'register' ? 'Créer un compte' : 'Connexion' ?> — UniFlow</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" referrerpolicy="no-referrer">
-    <link rel="stylesheet" href="assets/css/auth.css?v=6">
+    <link rel="stylesheet" href="assets/css/auth.css?v=7">
 </head>
 <body class="auth-page">
     <main class="auth-shell">
@@ -165,7 +180,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="social-divider"><span>ou avec ton adresse e-mail</span></div>
 
                 <?php if ($error !== ''): ?>
-                    <div class="alert" role="alert"><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></div>
+                    <div class="alert<?= $loginWarning ? ' login-warning' : '' ?>" role="alert"><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></div>
                 <?php endif; ?>
 
                 <form method="post" action="index.php?mode=<?= $mode ?>" class="auth-form">
@@ -192,9 +207,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <script>
     const loginToken = <?= json_encode($loginToken ?? null, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
     const redirectPage = <?= json_encode($redirectPage ?? 'home', JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+    const loginLockedUntil = <?= (int) $loginLockedUntil ?>;
     if (loginToken) {
         localStorage.setItem('uniflow_token', loginToken);
         window.location.replace('index.php?page=' + redirectPage);
+    }
+    if (loginLockedUntil > Math.floor(Date.now() / 1000)) {
+        const overlay = document.createElement('div');
+        overlay.className = 'lock-modal-backdrop';
+        overlay.setAttribute('role', 'dialog');
+        overlay.setAttribute('aria-modal', 'true');
+        overlay.setAttribute('aria-labelledby', 'lockModalTitle');
+        overlay.innerHTML = '<section class="lock-modal"><div class="lock-icon"><i class="fa-solid fa-shield-halved"></i></div><p class="lock-eyebrow">SÉCURITÉ UNIFLOW</p><h2 id="lockModalTitle">Connexion temporairement bloquée</h2><p>Trop de tentatives incorrectes. Vous pourrez réessayer dans :</p><div class="lock-countdown" aria-live="polite"><span id="lockTimer">15:00</span></div><small>Cette mesure protège votre compte.</small></section>';
+        document.body.append(overlay);
+        document.querySelectorAll('.auth-form input, .auth-form button[type="submit"]').forEach(element => element.disabled = true);
+        const timer = document.getElementById('lockTimer');
+        const updateLockTimer = () => {
+            const remaining = Math.max(0, loginLockedUntil - Math.floor(Date.now() / 1000));
+            timer.textContent = String(Math.floor(remaining / 60)).padStart(2, '0') + ':' + String(remaining % 60).padStart(2, '0');
+            if (remaining === 0) window.location.reload();
+        };
+        updateLockTimer();
+        window.setInterval(updateLockTimer, 1000);
     }
     document.querySelector('.reveal')?.addEventListener('click', function () {
         const field = document.querySelector('#password');
