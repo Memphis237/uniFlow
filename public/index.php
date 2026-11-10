@@ -128,6 +128,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#087e8b">
     <title><?= $mode === 'register' ? 'Créer un compte' : 'Connexion' ?> — UniFlow</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" referrerpolicy="no-referrer">
     <link rel="stylesheet" href="assets/css/auth.css?v=6">
 </head>
 <body class="auth-page">
@@ -144,7 +145,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </section>
 
         <section class="form-panel">
-            <div class="mobile-brand"><img class="auth-logo" width="68" height="68" src="assets/images/UniFlow_logo1_clean.png" alt="UniFlow"></div>
+            <!-- <div class="mobile-brand"><img class="auth-logo" width="68" height="68" src="assets/images/UniFlow_logo1_clean.png" alt="UniFlow"></div> -->
             <div class="form-content">
                 <div class="form-heading">
                     <span class="eyebrow teal"><?= $mode === 'register' ? 'BIENVENUE DANS LA COMMUNAUTÉ' : 'HEUREUX DE VOUS REVOIR' ?></span>
@@ -181,7 +182,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="password-label"><label for="password">Mot de passe</label><?php if ($mode === 'login'): ?><span class="secure-note">Protégé et confidentiel</span><?php endif; ?></div>
                     <div class="input-wrap"><svg class="input-icon lock" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#91a9a9" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="10" width="15" height="11" rx="2.5"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path><path d="M12 14v3"></path></svg><input id="password" name="password" type="password" autocomplete="<?= $mode === 'register' ? 'new-password' : 'current-password' ?>" placeholder="<?= $mode === 'register' ? '8 caractères minimum' : 'Votre mot de passe' ?>" required minlength="<?= $mode === 'register' ? '8' : '1' ?>"><button class="reveal" type="button" aria-label="Afficher le mot de passe" title="Afficher le mot de passe"><svg class="eye-open" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"></path><circle cx="12" cy="12" r="3"></circle></svg><svg class="eye-closed" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 3 18 18"></path><path d="M10.6 10.6a2 2 0 0 0 2.8 2.8"></path><path d="M9.9 5.2A10 10 0 0 1 12 5c6.4 0 10 7 10 7a16 16 0 0 1-3.1 4.1M6.2 6.2C3.5 8 2 12 2 12s3.6 7 10 7a10 10 0 0 0 4-.8"></path></svg></button></div>
                     <?php if ($mode === 'register'): ?><p class="hint">Utilisez au moins 8 caractères.</p><?php endif; ?>
-                    <button class="submit-button" type="submit"><?= $mode === 'register' ? 'Créer mon compte' : 'Se connecter' ?><span aria-hidden="true">→</span></button>
+                    <button class="submit-button" type="submit"><?= $mode === 'register' ? 'Créer mon compte' : 'Se connecter' ?><span aria-hidden="true"><i class="fa-solid fa-arrow-right"></i></span></button>
                 </form>
                 <p class="switch-copy"><?= $mode === 'register' ? 'Vous avez déjà un compte ?' : 'Vous découvrez UniFlow ?' ?> <a href="index.php?mode=<?= $mode === 'register' ? 'login' : 'register' ?>"><?= $mode === 'register' ? 'Se connecter' : 'Créer un compte' ?></a></p>
                 <div class="form-footer"><span>UNIFLOW</span><span>Un campus. Mille possibilités.</span></div>
