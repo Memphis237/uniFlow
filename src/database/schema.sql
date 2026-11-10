@@ -10,6 +10,7 @@ CREATE TABLE Users (
     name VARCHAR(255) NOT NULL,
     first_name VARCHAR(255) NOT NULL,
     email VARCHAR(100) NOT NULL UNIQUE,
+    google_sub VARCHAR(255) NULL,
     password VARCHAR(255) NOT NULL,
     adresse VARCHAR(255),
     postal_code VARCHAR(20),
@@ -23,7 +24,8 @@ CREATE TABLE Users (
     avatar VARCHAR(255),
     cover_image VARCHAR(255),
     status VARCHAR(50) NOT NULL DEFAULT 'active',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_users_google_sub (google_sub)
 );
 
 -- 2. Categories

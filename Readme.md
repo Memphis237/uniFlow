@@ -35,3 +35,17 @@ CREATE TABLE Message_attachments (
 ```
 
 For attachments up to 8 MB, set `upload_max_filesize=8M` and `post_max_size=24M` in the PHP configuration used by WampServer, then restart Apache.
+
+## Connexion Google
+
+The Google sign-in and sign-up flow uses OAuth 2.0 with `state`, PKCE and Google's HTTPS UserInfo endpoint. In Google Cloud Console, create a Web application OAuth client and add the exact value of `GOOGLE_REDIRECT_URI` to its authorized redirect URIs.
+
+Add these variables to `.env` without publishing the client secret:
+
+```dotenv
+GOOGLE_CLIENT_ID=your-client-id
+GOOGLE_CLIENT_SECRET=your-client-secret
+GOOGLE_REDIRECT_URI=http://localhost/uniFlow/public/index.php?oauth=google-callback
+```
+
+Use an `https://` redirect URI in production, and configure the same URI in Google Cloud Console. `google_sub` uniquely links the Google identity to its UniFlow account. On an existing database the callback adds the column and unique index when the database account has `ALTER TABLE` permission. Otherwise, apply `src/database/migrations/20261110_google_oauth.sql` once using a database administrator account before the first Google login.

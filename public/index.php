@@ -4,6 +4,31 @@ declare(strict_types=1);
 require_once __DIR__ . '/../src/database/db.php';
 require_once __DIR__ . '/../src/Services/authService.php';
 require_once __DIR__ . '/../src/Services/chatService.php';
+require_once __DIR__ . '/../src/Services/googleOAuthService.php';
+
+if (isset($_GET['oauth'])) {
+    try {
+        if ($_GET['oauth'] === 'google') {
+            google_oauth_session_start();
+            header('Location: ' . google_oauth_start_url(), true, 302);
+            exit;
+        }
+        if ($_GET['oauth'] === 'google-callback') {
+            $googleUser = google_oauth_complete($_GET);
+            auth_set_cookie($googleUser);
+            header('Location: index.php?page=' . (($googleUser['role'] ?? '') === 'admin' ? 'admin' : 'home'), true, 303);
+            exit;
+        }
+    } catch (Throwable $exception) {
+        error_log('Google OAuth failed: ' . $exception->__toString());
+        google_oauth_session_start();
+        $_SESSION['google_oauth_error'] = $exception instanceof RuntimeException && !($exception instanceof PDOException)
+            ? $exception->getMessage()
+            : 'La connexion Google a échoué. Réessaie dans quelques instants.';
+        header('Location: index.php?mode=login', true, 303);
+        exit;
+    }
+}
 
 if (($_GET['api'] ?? '') !== '') {
     header('Content-Type: application/json; charset=utf-8');
@@ -99,6 +124,8 @@ $oldName = '';
 $oldFirstName = '';
 $oldEmail = '';
 $csrf = auth_csrf_token();
+$error = (string)($_SESSION['google_oauth_error'] ?? '');
+unset($_SESSION['google_oauth_error']);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $mode = (($_POST['action'] ?? '') === 'register') ? 'register' : 'login';
@@ -158,10 +185,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <a role="tab" aria-selected="<?= $mode === 'register' ? 'true' : 'false' ?>" class="tab <?= $mode === 'register' ? 'active' : '' ?>" href="index.php?mode=register">Inscription</a>
                 </div>
 
-                <button class="google-button" type="button" title="La connexion Google nécessite une configuration OAuth">
+                <a class="google-button" href="index.php?oauth=google" title="Continuer avec Google">
                     <span class="google-mark" aria-hidden="true">G</span>
                     <span>Continuer avec Google</span>
-                </button>
+                </a>
                 <div class="social-divider"><span>ou avec ton adresse e-mail</span></div>
 
                 <?php if ($error !== ''): ?>
