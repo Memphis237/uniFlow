@@ -203,17 +203,33 @@ CREATE TABLE Events (
     title VARCHAR(255) NOT NULL,
     description TEXT NOT NULL,
     location VARCHAR(255),
+    address VARCHAR(255),
+    postal_code VARCHAR(20),
+    city VARCHAR(120),
+    country VARCHAR(120),
     starts_at DATETIME NOT NULL,
     ends_at DATETIME,
     max_participants INT,
     status VARCHAR(255) NOT NULL DEFAULT 'draft',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    published_until DATETIME NULL,
     Id_users INT NOT NULL,
 
     FOREIGN KEY (Id_users)
         REFERENCES Users(Id_users)
         ON UPDATE CASCADE
         ON DELETE RESTRICT
+);
+
+-- 11.1 Publications du campus
+CREATE TABLE Campus_posts (
+    Id_posts INT AUTO_INCREMENT PRIMARY KEY,
+    content TEXT NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    Id_users INT NOT NULL,
+    INDEX (created_at),
+    FOREIGN KEY (Id_users) REFERENCES Users(Id_users)
+        ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 -- 12. Events_participants
