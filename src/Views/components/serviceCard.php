@@ -127,10 +127,6 @@
                 <i data-lucide="message-square" class="w-4 h-4"></i>
                 <span class="comment-count"><?= (int) $service['reviews'] ?></span>
             </button>
-            <span class="ml-auto inline-flex items-center gap-1.5">
-                <i data-lucide="share-2" class="w-4 h-4"></i>
-                Partager
-            </span>
         </div>
 
         <div class="latest-comment mt-2 max-h-12 overflow-y-auto rounded-lg bg-slate-50 px-3 py-2 text-[11px] text-slate-500">

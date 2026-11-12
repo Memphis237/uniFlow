@@ -241,15 +241,6 @@
         `${data.likes} j’aime`;
   });
 
-  document.getElementById('detailShare')?.addEventListener('click', () => {
-    const shareData = {
-      title: document.getElementById('detailTitle').textContent,
-      url: window.location.href,
-    };
-    if (navigator.share) navigator.share(shareData);
-    else navigator.clipboard?.writeText(shareData.url);
-  });
-
   document
     .getElementById('contactOwner')
     ?.addEventListener('click', async () => {

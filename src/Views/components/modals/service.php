@@ -90,9 +90,6 @@
                 <button id="detailLike" type="button" class="inline-flex items-center gap-2 text-rose-600">
                     <i data-lucide="heart"></i><span></span>
                 </button>
-                <button id="detailShare" type="button" class="inline-flex gap-2">
-                    <i data-lucide="share-2"></i>Partager
-                </button>
             </div>
             <form id="bookingForm" class="mt-6 grid gap-3 sm:grid-cols-2">
                 <label class="text-sm">Proposer un rendez-vous<input name="scheduled_at" required type="datetime-local" class="mt-2 w-full rounded-lg border p-3"></label>
