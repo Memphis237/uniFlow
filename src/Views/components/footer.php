@@ -125,11 +125,11 @@
     </div>
     </div>
 <?php
-$profileLocation=implode(', ',array_filter(array_map('trim',[(string)($user['adresse']??''),(string)($user['postal_code']??''),(string)($user['city']??''),(string)($user['country']??'')])));
-$profilePhone=trim((string)($user['phone']??''));
-$mapQuery=$profileLocation!==''?$profileLocation:'Campus Lyon';
-$googleMapsUrl='https://www.google.com/maps/dir/?api=1&destination='.rawurlencode($mapQuery);
-$mapEmbedUrl='https://maps.google.com/maps?q='.rawurlencode($mapQuery).'&output=embed';
+$profileLocation = implode(', ',array_filter(array_map('trim',[(string)($user['adresse']??''),(string)($user['postal_code']??''),(string)($user['city']??''),(string)($user['country']??'')])));
+$profilePhone = trim((string)($user['phone']??''));
+$mapQuery = $profileLocation!==''?$profileLocation:'Campus Lyon';
+$googleMapsUrl = 'https://www.google.com/maps/dir/?api=1&destination='.rawurlencode($mapQuery);
+$mapEmbedUrl = 'https://maps.google.com/maps?q='.rawurlencode($mapQuery).'&output=embed';
 ?>
 <div id="locationModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/45 p-4 backdrop-blur-[2px]" role="dialog" aria-modal="true" aria-labelledby="locationModalTitle">
     <div class="w-full max-w-3xl overflow-hidden rounded-2xl bg-white shadow-2xl">
@@ -167,55 +167,205 @@ $mapEmbedUrl='https://maps.google.com/maps?q='.rawurlencode($mapQuery).'&output=
     </i>Ouvrir l'itineraire dans Google Maps<i data-lucide="arrow-right" class="ml-1 h-4 w-4">
     </i>
     </a>
-    <?php if($profileLocation===''): ?>
+    <?php if($profileLocation === ''): ?>
     <a href="index.php?page=profile" class="mt-3 block text-center text-xs text-teal-700 hover:underline">Renseigner mon adresse dans le profil</a>
     <?php endif; ?>
     </div>
     </div>
     </div>
 <script>
-function toggleServiceModal(){const modal=document.getElementById('serviceModal');modal.classList.toggle('hidden');modal.classList.toggle('flex')}
-function showLocationModal(address,fromProfile=false){const modal=document.getElementById('locationModal'),place=(address||'Campus Lyon').trim(),phone=document.getElementById('locationPhone');document.getElementById('locationPlace').textContent=place;document.getElementById('locationDescription').textContent=fromProfile?'Adresse issue de ton profil':'Localisation du service';document.getElementById('locationMapFrame').src='https://maps.google.com/maps?q='+encodeURIComponent(place)+'&output=embed';document.getElementById('locationDirections').href='https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(place);phone.classList.toggle('hidden',!fromProfile||!phone.textContent.trim().replace('Telephone :','').trim());modal.classList.remove('hidden');modal.classList.add('flex')}function toggleLocationModal(){const modal=document.getElementById('locationModal');if(modal.classList.contains('hidden'))showLocationModal(<?= json_encode($profileLocation?:'Campus Lyon',JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT) ?>,true);else{modal.classList.add('hidden');modal.classList.remove('flex')}}
-function closeDetailModal(){document.getElementById('detailModal').classList.add('hidden');document.getElementById('detailModal').classList.remove('flex')}
+function toggleServiceModal(){const modal=document.getElementById('serviceModal');
+    modal.classList.toggle('hidden');
+    modal.classList.toggle('flex')
+}
+function showLocationModal(address,fromProfile=false){const modal=document.getElementById('locationModal'),place=(address||'Campus Lyon').trim(),phone=document.getElementById('locationPhone');
+    document.getElementById('locationPlace').textContent=place;
+    document.getElementById('locationDescription').textContent=fromProfile?'Adresse issue de ton profil':'Localisation du service';
+    document.getElementById('locationMapFrame').src='https://maps.google.com/maps?q='+encodeURIComponent(place)+'&output=embed';
+    document.getElementById('locationDirections').href='https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(place);
+    phone.classList.toggle('hidden',!fromProfile||!phone.textContent.trim().replace('Telephone :','').trim());
+    modal.classList.remove('hidden');
+    modal.classList.add('flex')}function toggleLocationModal(){const modal=document.getElementById('locationModal');
+    if(modal.classList.contains('hidden'))showLocationModal(<?= json_encode($profileLocation?:'Campus Lyon',JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT) ?>,true);
+    else{modal.classList.add('hidden');
+    modal.classList.remove('flex')}}
+function closeDetailModal(){document.getElementById('detailModal').classList.add('hidden');
+    document.getElementById('detailModal').classList.remove('flex')}
 const currentCommenter=<?= json_encode((string)($user['first_name']??'Moi'), JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT) ?>;
-const selectedService={id:0};let detailImages=[],detailImageIndex=0;function renderDetailImage(){const image=document.getElementById('detailImage'),count=document.getElementById('detailImageCount'),many=detailImages.length>1;image.src=detailImages[detailImageIndex]||'';count.textContent=many?(detailImageIndex+1)+' / '+detailImages.length:'';document.getElementById('detailImagePrev').classList.toggle('hidden',!many);document.getElementById('detailImageNext').classList.toggle('hidden',!many)}document.getElementById('detailImagePrev')?.addEventListener('click',()=>{detailImageIndex=(detailImageIndex-1+detailImages.length)%detailImages.length;renderDetailImage()});document.getElementById('detailImageNext')?.addEventListener('click',()=>{detailImageIndex=(detailImageIndex+1)%detailImages.length;renderDetailImage()});
-document.getElementById('serviceImages')?.addEventListener('change',event=>{const files=Array.from(event.target.files||[]),label=document.getElementById('serviceImageSelection');label.textContent=files.length?files.map(file=>file.name).join(' / '):'Aucune photo selectionnee';if(files.length>8){label.textContent='Maximum 8 photos.';event.target.value=''}});
-document.getElementById('serviceForm')?.addEventListener('submit',async e=>{e.preventDefault();const status=document.getElementById('serviceFormStatus'),submit=e.currentTarget.querySelector('button[type="submit"],button:not([type])');status.textContent='Publication en cours…';submit.disabled=true;try{const response=await fetch('index.php?api=service-create',{method:'POST',body:new FormData(e.currentTarget)});const data=await response.json();if(!response.ok)throw Error(data.error||'Publication impossible');status.textContent='Service publié. Actualisation de la liste…';setTimeout(()=>location.reload(),500)}catch(error){status.textContent=error.message;submit.disabled=false}});
+
+const selectedService={id:0};
+    let detailImages=[],detailImageIndex=0;
+    function renderDetailImage(){const image=document.getElementById('detailImage'),count=document.getElementById('detailImageCount'),many=detailImages.length>1;
+    image.src=detailImages[detailImageIndex]||'';
+    count.textContent=many?(detailImageIndex+1)+' / '+detailImages.length:'';
+    document.getElementById('detailImagePrev').classList.toggle('hidden',!many);
+    document.getElementById('detailImageNext').classList.toggle('hidden',!many)}document.getElementById('detailImagePrev')?.addEventListener('click',()=>{detailImageIndex=(detailImageIndex-1+detailImages.length)%detailImages.length;
+    renderDetailImage()});
+    document.getElementById('detailImageNext')?.addEventListener('click',()=>{detailImageIndex=(detailImageIndex+1)%detailImages.length;
+    renderDetailImage()});
+
+document.getElementById('serviceImages')?.addEventListener('change',event=>{const files=Array.from(event.target.files||[]),label=document.getElementById('serviceImageSelection');
+    label.textContent=files.length?files.map(file=>file.name).join(' / '):'Aucune photo selectionnee';
+    if(files.length>8){label.textContent='Maximum 8 photos.';
+    event.target.value=''}});
+
+document.getElementById('serviceForm')?.addEventListener('submit',async e=>{e.preventDefault();
+    const status=document.getElementById('serviceFormStatus'),submit=e.currentTarget.querySelector('button[type="submit"],button:not([type])');
+    status.textContent='Publication en cours…';
+    submit.disabled=true;
+    try{const response=await fetch('index.php?api=service-create',{method:'POST',body:new FormData(e.currentTarget)});
+    const data=await response.json();
+    if(!response.ok)throw Error(data.error||'Publication impossible');
+    status.textContent='Service publié. Actualisation de la liste…';
+    setTimeout(()=>location.reload(),500)}catch(error){status.textContent=error.message;
+    submit.disabled=false}});
+
 document.querySelectorAll('.service-location-button').forEach(button=>button.addEventListener('click',()=>showLocationModal(button.dataset.location)));
-document.querySelectorAll('.discover-button').forEach(button=>button.addEventListener('click',async()=>{const card=button.closest('.service-card'),modal=document.getElementById('detailModal');document.getElementById('detailTitle').textContent=card.querySelector('h3').textContent;document.getElementById('detailOwner').textContent=card.dataset.owner;document.getElementById('detailDescription').textContent=card.dataset.description;detailImages=[card.dataset.image].filter(Boolean);detailImageIndex=0;renderDetailImage();document.getElementById('detailLike').querySelector('span').textContent=card.dataset.seedLikes+' j’aime';document.getElementById('detailReviews').innerHTML='<p class="text-sm text-slate-500">'+card.dataset.seedRating+' <i class=\"fa-solid fa-star text-amber-400\">
-    </i> - '+card.querySelector('.latest-comment').textContent+'</p>';selectedService.id=Number(card.dataset.id||0);modal.classList.remove('hidden');modal.classList.add('flex');if(selectedService.id){try{const data=await(await fetch('index.php?api=service-detail&id='+selectedService.id)).json();document.getElementById('detailLike').querySelector('span').textContent=data.service.likes+' j’aime';document.getElementById('detailDescription').textContent=data.service.description;detailImages=(data.service.images||[data.service.image]).filter(Boolean);detailImageIndex=0;renderDetailImage();document.getElementById('detailReviews').replaceChildren(...data.reviews.map(r=>{const p=document.createElement('p');p.className='rounded-lg bg-slate-50 p-3 text-sm';const stars=document.createElement('span');stars.className='mr-2 text-amber-500';stars.innerHTML='<i class="fa-solid fa-star">
-    </i>'.repeat(r.rating);p.append(stars,document.createTextNode(' '+r.first_name+' '+r.name+' - '+r.comment));return p}))}catch{}}}));
-document.getElementById('detailLike')?.addEventListener('click',async()=>{if(!selectedService.id)return;const d=await(await fetch('index.php?api=service-like&id='+selectedService.id,{method:'POST'})).json();document.getElementById('detailLike').querySelector('span').textContent=d.likes+' j’aime'});
+
+document.querySelectorAll('.discover-button').forEach(button=>button.addEventListener('click',async()=>{const card=button.closest('.service-card'),modal=document.getElementById('detailModal');
+    document.getElementById('detailTitle').textContent=card.querySelector('h3').textContent;
+    document.getElementById('detailOwner').textContent=card.dataset.owner;
+    document.getElementById('detailDescription').textContent=card.dataset.description;
+    detailImages=[card.dataset.image].filter(Boolean);
+    detailImageIndex=0;
+    renderDetailImage();
+    document.getElementById('detailLike').querySelector('span').textContent=card.dataset.seedLikes+' j’aime';
+    document.getElementById('detailReviews').innerHTML='<p class="text-sm text-slate-500">'+card.dataset.seedRating+' <i class=\"fa-solid fa-star text-amber-400\">
+    </i> - '+card.querySelector('.latest-comment').textContent+'</p>';
+    selectedService.id=Number(card.dataset.id||0);
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    if(selectedService.id){try{const data=await(await fetch('index.php?api=service-detail&id='+selectedService.id)).json();
+    document.getElementById('detailLike').querySelector('span').textContent=data.service.likes+' j’aime';
+    document.getElementById('detailDescription').textContent=data.service.description;
+    detailImages=(data.service.images||[data.service.image]).filter(Boolean);
+    detailImageIndex=0;
+    renderDetailImage();
+    document.getElementById('detailReviews').replaceChildren(...data.reviews.map(r=>{const p=document.createElement('p');
+    p.className='rounded-lg bg-slate-50 p-3 text-sm';
+    const stars=document.createElement('span');
+    stars.className='mr-2 text-amber-500';
+    stars.innerHTML='<i class="fa-solid fa-star">
+    </i>'.repeat(r.rating);
+    p.append(stars,document.createTextNode(' '+r.first_name+' '+r.name+' - '+r.comment));
+    return p}))}catch{}}}));
+
+document.getElementById('detailLike')?.addEventListener('click',async()=>{if(!selectedService.id)return;
+    const d=await(await fetch('index.php?api=service-like&id='+selectedService.id,{method:'POST'})).json();
+    document.getElementById('detailLike').querySelector('span').textContent=d.likes+' j’aime'});
+
 document.getElementById('detailShare')?.addEventListener('click',()=>navigator.share?navigator.share({title:document.getElementById('detailTitle').textContent,url:location.href}):navigator.clipboard.writeText(location.href));
-document.getElementById('contactOwner')?.addEventListener('click',async()=>{if(!selectedService.id){document.getElementById('detailStatus').textContent='La messagerie sera disponible pour ce service publié.';return}const body=new URLSearchParams({service_id:selectedService.id});const d=await(await fetch('index.php?api=contact',{method:'POST',body})).json();if(d.redirect)location.href=d.redirect;else document.getElementById('detailStatus').textContent=d.error||''});
-for(const [formId,api] of [['bookingForm','booking-create'],['reviewForm','review-create']])document.getElementById(formId)?.addEventListener('submit',async e=>{e.preventDefault();if(!selectedService.id){document.getElementById('detailStatus').textContent='Cette action est disponible après publication du service dans la base.';return}const body=new FormData(e.currentTarget);body.append('service_id',selectedService.id);const d=await(await fetch('index.php?api='+api,{method:'POST',body})).json();document.getElementById('detailStatus').textContent=d.ok?'Demande enregistrée.':(d.error||'Une erreur est survenue.')});
+
+document.getElementById('contactOwner')?.addEventListener('click',async()=>{if(!selectedService.id){document.getElementById('detailStatus').textContent='La messagerie sera disponible pour ce service publié.';
+    return}const body=new URLSearchParams({service_id:selectedService.id});
+    const d=await(await fetch('index.php?api=contact',{method:'POST',body})).json();
+    if(d.redirect)location.href=d.redirect;
+    else document.getElementById('detailStatus').textContent=d.error||''});
+
+for(const [formId,api] of [['bookingForm','booking-create'],['reviewForm','review-create']])document.getElementById(formId)?.addEventListener('submit',async e=>{e.preventDefault();
+    if(!selectedService.id){document.getElementById('detailStatus').textContent='Cette action est disponible après publication du service dans la base.';
+    return}const body=new FormData(e.currentTarget);
+    body.append('service_id',selectedService.id);
+    const d=await(await fetch('index.php?api='+api,{method:'POST',body})).json();
+    document.getElementById('detailStatus').textContent=d.ok?'Demande enregistrée.':(d.error||'Une erreur est survenue.')});
+
 document.querySelectorAll('.service-card').forEach(card=>{
- const storageKey='uniflow:service:'+card.dataset.serviceKey,id=Number(card.dataset.id||0);let state;
+ const storageKey='uniflow:service:'+card.dataset.serviceKey,id=Number(card.dataset.id||0);
+    let state;
+
  try{state=JSON.parse(localStorage.getItem(storageKey))}catch{state=null}
  const dbComments=Number(card.dataset.seedComments)||0;
+
  if(!state||typeof state!=='object')state={liked:card.dataset.liked==='true',likes:Number(card.dataset.seedLikes),comments:dbComments&&card.dataset.seedComment?[{author:card.dataset.seedAuthor,text:card.dataset.seedComment}]:[]};
- if(id){state.liked=card.dataset.liked==='true';state.likes=Number(card.dataset.seedLikes)}
+
+ if(id){state.liked=card.dataset.liked==='true';
+    state.likes=Number(card.dataset.seedLikes)}
  const likeButtons=[card.querySelector('.like-button'),card.querySelector('.favorite-button')].filter(Boolean),likeCount=card.querySelector('.like-count'),commentCount=card.querySelector('.comment-count'),commentPanel=card.querySelector('.comment-panel'),commentList=card.querySelector('.comment-list'),latest=card.querySelector('.latest-comment');
- function paintHeart(){likeButtons.forEach(button=>{button.setAttribute('aria-pressed',String(state.liked));if(button.classList.contains('favorite-button'))button.setAttribute('aria-label',state.liked?'Retirer des favoris':'Ajouter aux favoris');button.classList.toggle('text-rose-500',state.liked);const icon=button.querySelector('svg,i');if(icon)icon.classList.toggle('fill-current',state.liked)})}
+
+ function paintHeart(){likeButtons.forEach(button=>{button.setAttribute('aria-pressed',String(state.liked));
+    if(button.classList.contains('favorite-button'))button.setAttribute('aria-label',state.liked?'Retirer des favoris':'Ajouter aux favoris');
+    button.classList.toggle('text-rose-500',state.liked);
+    const icon=button.querySelector('svg,i');
+    if(icon)icon.classList.toggle('fill-current',state.liked)})}
  function save(){if(!id)localStorage.setItem(storageKey,JSON.stringify(state))}
- function draw(){paintHeart();likeCount.textContent=String(state.likes);commentCount.textContent=String(Math.max(dbComments,state.comments.length));commentList.replaceChildren();state.comments.slice(-3).reverse().forEach(comment=>{const row=document.createElement('p');row.className='rounded-lg bg-slate-50 px-3 py-2 text-[11px] text-slate-600';const author=document.createElement('strong');author.className='text-slate-800';author.textContent=comment.author+' ';row.append(author,document.createTextNode(comment.text));commentList.append(row)});const last=state.comments[state.comments.length-1];if(last){latest.replaceChildren();const author=document.createElement('strong');author.className='text-slate-700';author.textContent=last.author+' ';latest.append(author,document.createTextNode(last.text))}else latest.textContent='Pas encore d?avis.'}
- async function toggleLike(){if(id){let saved=false;likeButtons.forEach(button=>button.disabled=true);try{const response=await fetch('index.php?api=service-like&id='+id,{method:'POST'}),data=await response.json();if(!response.ok)throw Error(data.error||'Action impossible');state.liked=Boolean(data.liked);state.likes=Number(data.likes);card.dataset.liked=String(state.liked);saved=true}catch(error){console.error(error);window.alert(error.message||'Impossible de modifier le favori.')}finally{likeButtons.forEach(button=>button.disabled=false)}if(saved&&!state.liked&&new URLSearchParams(location.search).get('page')==='favorites'){location.reload();return}}else{state.liked=!state.liked;state.likes=Math.max(0,state.likes+(state.liked?1:-1));save()}draw()}
- draw();likeButtons.forEach(button=>button.addEventListener('click',toggleLike));
- const toggle=card.querySelector('.comment-toggle');toggle.addEventListener('click',()=>{const open=commentPanel.classList.contains('hidden');commentPanel.classList.toggle('hidden');toggle.setAttribute('aria-expanded',String(open))});
- card.querySelector('.comment-form').addEventListener('submit',event=>{event.preventDefault();const input=card.querySelector('.comment-input'),text=input.value.trim();if(!text)return;state.comments.push({author:currentCommenter,text});save();draw();input.value=''})
+ function draw(){paintHeart();
+    likeCount.textContent=String(state.likes);
+    commentCount.textContent=String(Math.max(dbComments,state.comments.length));
+    commentList.replaceChildren();
+    state.comments.slice(-3).reverse().forEach(comment=>{const row=document.createElement('p');
+    row.className='rounded-lg bg-slate-50 px-3 py-2 text-[11px] text-slate-600';
+    const author=document.createElement('strong');
+    author.className='text-slate-800';
+    author.textContent=comment.author+' ';
+    row.append(author,document.createTextNode(comment.text));
+    commentList.append(row)});
+    const last=state.comments[state.comments.length-1];
+    if(last){latest.replaceChildren();
+    const author=document.createElement('strong');
+    author.className='text-slate-700';
+    author.textContent=last.author+' ';
+    latest.append(author,document.createTextNode(last.text))}else latest.textContent='Pas encore d?avis.'}
+ async function toggleLike(){if(id){let saved=false;
+    likeButtons.forEach(button=>button.disabled=true);
+    try{const response=await fetch('index.php?api=service-like&id='+id,{method:'POST'}),data=await response.json();
+    if(!response.ok)throw Error(data.error||'Action impossible');
+    state.liked=Boolean(data.liked);
+    state.likes=Number(data.likes);
+    card.dataset.liked=String(state.liked);
+    saved=true}catch(error){console.error(error);
+    window.alert(error.message||'Impossible de modifier le favori.')}finally{likeButtons.forEach(button=>button.disabled=false)}if(saved&&!state.liked&&new URLSearchParams(location.search).get('page')==='favorites'){location.reload();
+    return}}else{state.liked=!state.liked;
+    state.likes=Math.max(0,state.likes+(state.liked?1:-1));
+    save()}draw()}
+ draw();
+    likeButtons.forEach(button=>button.addEventListener('click',toggleLike));
+
+ const toggle=card.querySelector('.comment-toggle');
+    toggle.addEventListener('click',()=>{const open=commentPanel.classList.contains('hidden');
+    commentPanel.classList.toggle('hidden');
+    toggle.setAttribute('aria-expanded',String(open))});
+
+ card.querySelector('.comment-form').addEventListener('submit',event=>{event.preventDefault();
+    const input=card.querySelector('.comment-input'),text=input.value.trim();
+    if(!text)return;
+    state.comments.push({author:currentCommenter,text});
+    save();
+    draw();
+    input.value=''})
 });
+
 lucide.createIcons();
+
 </script>
 <script>
 (()=>{
-async function updateNavUnread(){try{const response=await fetch('index.php?api=messages-unread');if(!response.ok)return;const data=await response.json(),link=document.querySelector('a[href="index.php?page=messages"]');let badge=document.getElementById('navMessagesBadge');if(Number(data.total)>0){if(!badge&&link){badge=document.createElement('b');badge.id='navMessagesBadge';badge.className='ml-auto grid h-5 min-w-5 place-items-center rounded-full bg-teal-600 px-1.5 text-white text-xs';link.append(badge)}if(badge)badge.textContent=String(data.total)}else badge?.remove()}catch{}}
+async function updateNavUnread(){try{const response=await fetch('index.php?api=messages-unread');
+    if(!response.ok)return;
+    const data=await response.json(),link=document.querySelector('a[href="index.php?page=messages"]');
+    let badge=document.getElementById('navMessagesBadge');
+    if(Number(data.total)>0){if(!badge&&link){badge=document.createElement('b');
+    badge.id='navMessagesBadge';
+    badge.className='ml-auto grid h-5 min-w-5 place-items-center rounded-full bg-teal-600 px-1.5 text-white text-xs';
+    link.append(badge)}if(badge)badge.textContent=String(data.total)}else badge?.remove()}catch{}}
 async function heartbeat(state='online'){try{await fetch('index.php?api=chat-presence',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({state})})}catch{}}
-async function connectNotifications(){try{const response=await fetch('index.php?api=chat-token&conversation=0'),data=await response.json();if(!response.ok)return;const scheme=location.protocol==='https:'?'wss':'ws',socket=new WebSocket(scheme+'://'+location.hostname+':8081?ticket='+encodeURIComponent(data.ticket));socket.addEventListener('message',event=>{try{if(JSON.parse(event.data).type==='unread')updateNavUnread()}catch{}});socket.addEventListener('close',()=>setTimeout(connectNotifications,5000));socket.addEventListener('error',()=>socket.close())}catch{setTimeout(connectNotifications,7000)}}
-updateNavUnread();heartbeat();connectNotifications();setInterval(updateNavUnread,10000);setInterval(()=>heartbeat(),15000);window.addEventListener('pagehide',()=>navigator.sendBeacon('index.php?api=chat-presence',new URLSearchParams({state:'offline'})))
+async function connectNotifications(){try{const response=await fetch('index.php?api=chat-token&conversation=0'),data=await response.json();
+    if(!response.ok)return;
+    const scheme=location.protocol==='https:'?'wss':'ws',socket=new WebSocket(scheme+'://'+location.hostname+':8081?ticket='+encodeURIComponent(data.ticket));
+    socket.addEventListener('message',event=>{try{if(JSON.parse(event.data).type==='unread')updateNavUnread()}catch{}});
+    socket.addEventListener('close',()=>setTimeout(connectNotifications,5000));
+    socket.addEventListener('error',()=>socket.close())}catch{setTimeout(connectNotifications,7000)}}
+updateNavUnread();
+    heartbeat();
+    connectNotifications();
+    setInterval(updateNavUnread,10000);
+    setInterval(()=>heartbeat(),15000);
+    window.addEventListener('pagehide',()=>navigator.sendBeacon('index.php?api=chat-presence',new URLSearchParams({state:'offline'})))
 })();
+
 </script>
 </body>
-    </html><div id="locationModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/45 p-4 backdrop-blur-[2px]" role="dialog" aria-modal="true" aria-labelledby="locationModalTitle">
+    </html>
+<div id="locationModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/45 p-4 backdrop-blur-[2px]" role="dialog" aria-modal="true" aria-labelledby="locationModalTitle">
     <div class="w-full max-w-3xl overflow-hidden rounded-2xl bg-white shadow-2xl">
     <div class="flex items-center justify-between border-b border-slate-100 px-6 py-5 md:px-7">
     <h2 id="locationModalTitle" class="text-2xl font-bold tracking-tight text-slate-800">Localisation</h2>
@@ -227,8 +377,7 @@ updateNavUnread();heartbeat();connectNotifications();setInterval(updateNavUnread
     <div class="p-5 md:p-7">
     <div class="mb-5 flex items-center gap-3">
     <span class="grid h-12 w-12 place-items-center rounded-xl bg-teal-50 text-teal-600">
-    <i data-lucide="map-pin" class="h-5 w-5">
-    </i>
+        <i data-lucide="map-pin" class="h-5 w-5"></i>
     </span>
     <div>
     <p id="locationPlace" class="font-semibold text-slate-800">
@@ -258,42 +407,191 @@ updateNavUnread();heartbeat();connectNotifications();setInterval(updateNavUnread
     </div>
     </div>
 <script>
-function toggleServiceModal(){const modal=document.getElementById('serviceModal');modal.classList.toggle('hidden');modal.classList.toggle('flex')}
-function showLocationModal(address,fromProfile=false){const modal=document.getElementById('locationModal'),place=(address||'Campus Lyon').trim(),phone=document.getElementById('locationPhone');document.getElementById('locationPlace').textContent=place;document.getElementById('locationDescription').textContent=fromProfile?'Adresse issue de ton profil':'Localisation du service';document.getElementById('locationMapFrame').src='https://maps.google.com/maps?q='+encodeURIComponent(place)+'&output=embed';document.getElementById('locationDirections').href='https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(place);phone.classList.toggle('hidden',!fromProfile||!phone.textContent.trim().replace('Telephone :','').trim());modal.classList.remove('hidden');modal.classList.add('flex')}function toggleLocationModal(){const modal=document.getElementById('locationModal');if(modal.classList.contains('hidden'))showLocationModal(<?= json_encode($profileLocation?:'Campus Lyon',JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT) ?>,true);else{modal.classList.add('hidden');modal.classList.remove('flex')}}
-function closeDetailModal(){document.getElementById('detailModal').classList.add('hidden');document.getElementById('detailModal').classList.remove('flex')}
+function toggleServiceModal(){const modal=document.getElementById('serviceModal');
+    modal.classList.toggle('hidden');
+    modal.classList.toggle('flex')}
+function showLocationModal(address,fromProfile=false){const modal=document.getElementById('locationModal'),place=(address||'Campus Lyon').trim(),phone=document.getElementById('locationPhone');
+    document.getElementById('locationPlace').textContent=place;
+    document.getElementById('locationDescription').textContent=fromProfile?'Adresse issue de ton profil':'Localisation du service';
+    document.getElementById('locationMapFrame').src='https://maps.google.com/maps?q='+encodeURIComponent(place)+'&output=embed';
+    document.getElementById('locationDirections').href='https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(place);
+    phone.classList.toggle('hidden',!fromProfile||!phone.textContent.trim().replace('Telephone :','').trim());
+    modal.classList.remove('hidden');
+    modal.classList.add('flex')}function toggleLocationModal(){const modal=document.getElementById('locationModal');
+    if(modal.classList.contains('hidden'))showLocationModal(<?= json_encode($profileLocation?:'Campus Lyon',JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT) ?>,true);
+    else{modal.classList.add('hidden');
+    modal.classList.remove('flex')}}
+function closeDetailModal(){document.getElementById('detailModal').classList.add('hidden');
+    document.getElementById('detailModal').classList.remove('flex')}
 const currentCommenter=<?= json_encode((string)($user['first_name']??'Moi'), JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT) ?>;
-const selectedService={id:0};let detailImages=[],detailImageIndex=0;function renderDetailImage(){const image=document.getElementById('detailImage'),count=document.getElementById('detailImageCount'),many=detailImages.length>1;image.src=detailImages[detailImageIndex]||'';count.textContent=many?(detailImageIndex+1)+' / '+detailImages.length:'';document.getElementById('detailImagePrev').classList.toggle('hidden',!many);document.getElementById('detailImageNext').classList.toggle('hidden',!many)}document.getElementById('detailImagePrev')?.addEventListener('click',()=>{detailImageIndex=(detailImageIndex-1+detailImages.length)%detailImages.length;renderDetailImage()});document.getElementById('detailImageNext')?.addEventListener('click',()=>{detailImageIndex=(detailImageIndex+1)%detailImages.length;renderDetailImage()});
-document.getElementById('serviceImages')?.addEventListener('change',event=>{const files=Array.from(event.target.files||[]),label=document.getElementById('serviceImageSelection');label.textContent=files.length?files.map(file=>file.name).join(' / '):'Aucune photo selectionnee';if(files.length>8){label.textContent='Maximum 8 photos.';event.target.value=''}});
-document.getElementById('serviceForm')?.addEventListener('submit',async e=>{e.preventDefault();const status=document.getElementById('serviceFormStatus'),submit=e.currentTarget.querySelector('button[type="submit"],button:not([type])');status.textContent='Publication en cours…';submit.disabled=true;try{const response=await fetch('index.php?api=service-create',{method:'POST',body:new FormData(e.currentTarget)});const data=await response.json();if(!response.ok)throw Error(data.error||'Publication impossible');status.textContent='Service publié. Actualisation de la liste…';setTimeout(()=>location.reload(),500)}catch(error){status.textContent=error.message;submit.disabled=false}});
+
+const selectedService={id:0};
+    let detailImages=[],detailImageIndex=0;
+    function renderDetailImage(){const image=document.getElementById('detailImage'),count=document.getElementById('detailImageCount'),many=detailImages.length>1;
+    image.src=detailImages[detailImageIndex]||'';
+    count.textContent=many?(detailImageIndex+1)+' / '+detailImages.length:'';
+    document.getElementById('detailImagePrev').classList.toggle('hidden',!many);
+    document.getElementById('detailImageNext').classList.toggle('hidden',!many)}document.getElementById('detailImagePrev')?.addEventListener('click',()=>{detailImageIndex=(detailImageIndex-1+detailImages.length)%detailImages.length;
+    renderDetailImage()});
+    document.getElementById('detailImageNext')?.addEventListener('click',()=>{detailImageIndex=(detailImageIndex+1)%detailImages.length;
+    renderDetailImage()});
+
+document.getElementById('serviceImages')?.addEventListener('change',event=>{const files=Array.from(event.target.files||[]),label=document.getElementById('serviceImageSelection');
+    label.textContent=files.length?files.map(file=>file.name).join(' / '):'Aucune photo selectionnee';
+    if(files.length>8){label.textContent='Maximum 8 photos.';
+    event.target.value=''}});
+
+document.getElementById('serviceForm')?.addEventListener('submit',async e=>{e.preventDefault();
+    const status=document.getElementById('serviceFormStatus'),submit=e.currentTarget.querySelector('button[type="submit"],button:not([type])');
+    status.textContent='Publication en cours…';
+    submit.disabled=true;
+    try{const response=await fetch('index.php?api=service-create',{method:'POST',body:new FormData(e.currentTarget)});
+    const data=await response.json();
+    if(!response.ok)throw Error(data.error||'Publication impossible');
+    status.textContent='Service publié. Actualisation de la liste…';
+    setTimeout(()=>location.reload(),500)}catch(error){status.textContent=error.message;
+    submit.disabled=false}});
+
 document.querySelectorAll('.service-location-button').forEach(button=>button.addEventListener('click',()=>showLocationModal(button.dataset.location)));
-document.querySelectorAll('.discover-button').forEach(button=>button.addEventListener('click',async()=>{const card=button.closest('.service-card'),modal=document.getElementById('detailModal');document.getElementById('detailTitle').textContent=card.querySelector('h3').textContent;document.getElementById('detailOwner').textContent=card.dataset.owner;document.getElementById('detailDescription').textContent=card.dataset.description;detailImages=[card.dataset.image].filter(Boolean);detailImageIndex=0;renderDetailImage();document.getElementById('detailLike').querySelector('span').textContent=card.dataset.seedLikes+' j’aime';document.getElementById('detailReviews').innerHTML='<p class="text-sm text-slate-500">'+card.dataset.seedRating+' <i class=\"fa-solid fa-star text-amber-400\"></i> - '+card.querySelector('.latest-comment').textContent+'</p>';selectedService.id=Number(card.dataset.id||0);modal.classList.remove('hidden');modal.classList.add('flex');if(selectedService.id){try{const data=await(await fetch('index.php?api=service-detail&id='+selectedService.id)).json();document.getElementById('detailLike').querySelector('span').textContent=data.service.likes+' j’aime';document.getElementById('detailDescription').textContent=data.service.description;detailImages=(data.service.images||[data.service.image]).filter(Boolean);detailImageIndex=0;renderDetailImage();document.getElementById('detailReviews').replaceChildren(...data.reviews.map(r=>{const p=document.createElement('p');p.className='rounded-lg bg-slate-50 p-3 text-sm';const stars=document.createElement('span');stars.className='mr-2 text-amber-500';stars.innerHTML='<i class="fa-solid fa-star"></i>'.repeat(r.rating);p.append(stars,document.createTextNode(' '+r.first_name+' '+r.name+' - '+r.comment));return p}))}catch{}}}));
-document.getElementById('detailLike')?.addEventListener('click',async()=>{if(!selectedService.id)return;const d=await(await fetch('index.php?api=service-like&id='+selectedService.id,{method:'POST'})).json();document.getElementById('detailLike').querySelector('span').textContent=d.likes+' j’aime'});
+
+document.querySelectorAll('.discover-button').forEach(button=>button.addEventListener('click',async()=>{const card=button.closest('.service-card'),modal=document.getElementById('detailModal');
+    document.getElementById('detailTitle').textContent=card.querySelector('h3').textContent;
+    document.getElementById('detailOwner').textContent=card.dataset.owner;
+    document.getElementById('detailDescription').textContent=card.dataset.description;
+    detailImages=[card.dataset.image].filter(Boolean);
+    detailImageIndex=0;
+    renderDetailImage();
+    document.getElementById('detailLike').querySelector('span').textContent=card.dataset.seedLikes+' j’aime';
+    document.getElementById('detailReviews').innerHTML='<p class="text-sm text-slate-500">'+card.dataset.seedRating+' <i class=\"fa-solid fa-star text-amber-400\"></i> - '+card.querySelector('.latest-comment').textContent+'</p>';
+    selectedService.id=Number(card.dataset.id||0);
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    if(selectedService.id){try{const data=await(await fetch('index.php?api=service-detail&id='+selectedService.id)).json();
+    document.getElementById('detailLike').querySelector('span').textContent=data.service.likes+' j’aime';
+    document.getElementById('detailDescription').textContent=data.service.description;
+    detailImages=(data.service.images||[data.service.image]).filter(Boolean);
+    detailImageIndex=0;
+    renderDetailImage();
+    document.getElementById('detailReviews').replaceChildren(...data.reviews.map(r=>{const p=document.createElement('p');
+    p.className='rounded-lg bg-slate-50 p-3 text-sm';
+    const stars=document.createElement('span');
+    stars.className='mr-2 text-amber-500';
+    stars.innerHTML='<i class="fa-solid fa-star"></i>'.repeat(r.rating);
+    p.append(stars,document.createTextNode(' '+r.first_name+' '+r.name+' - '+r.comment));
+    return p}))}catch{}}}));
+
+document.getElementById('detailLike')?.addEventListener('click',async()=>{if(!selectedService.id)return;
+    const d=await(await fetch('index.php?api=service-like&id='+selectedService.id,{method:'POST'})).json();
+    document.getElementById('detailLike').querySelector('span').textContent=d.likes+' j’aime'});
+
 document.getElementById('detailShare')?.addEventListener('click',()=>navigator.share?navigator.share({title:document.getElementById('detailTitle').textContent,url:location.href}):navigator.clipboard.writeText(location.href));
-document.getElementById('contactOwner')?.addEventListener('click',async()=>{if(!selectedService.id){document.getElementById('detailStatus').textContent='La messagerie sera disponible pour ce service publié.';return}const body=new URLSearchParams({service_id:selectedService.id});const d=await(await fetch('index.php?api=contact',{method:'POST',body})).json();if(d.redirect)location.href=d.redirect;else document.getElementById('detailStatus').textContent=d.error||''});
-for(const [formId,api] of [['bookingForm','booking-create'],['reviewForm','review-create']])document.getElementById(formId)?.addEventListener('submit',async e=>{e.preventDefault();if(!selectedService.id){document.getElementById('detailStatus').textContent='Cette action est disponible après publication du service dans la base.';return}const body=new FormData(e.currentTarget);body.append('service_id',selectedService.id);const d=await(await fetch('index.php?api='+api,{method:'POST',body})).json();document.getElementById('detailStatus').textContent=d.ok?'Demande enregistrée.':(d.error||'Une erreur est survenue.')});
+
+document.getElementById('contactOwner')?.addEventListener('click',async()=>{if(!selectedService.id){document.getElementById('detailStatus').textContent='La messagerie sera disponible pour ce service publié.';
+    return}const body=new URLSearchParams({service_id:selectedService.id});
+    const d=await(await fetch('index.php?api=contact',{method:'POST',body})).json();
+    if(d.redirect)location.href=d.redirect;
+    else document.getElementById('detailStatus').textContent=d.error||''});
+
+for(const [formId,api] of [['bookingForm','booking-create'],['reviewForm','review-create']])document.getElementById(formId)?.addEventListener('submit',async e=>{e.preventDefault();
+    if(!selectedService.id){document.getElementById('detailStatus').textContent='Cette action est disponible après publication du service dans la base.';
+    return}const body=new FormData(e.currentTarget);
+    body.append('service_id',selectedService.id);
+    const d=await(await fetch('index.php?api='+api,{method:'POST',body})).json();
+    document.getElementById('detailStatus').textContent=d.ok?'Demande enregistrée.':(d.error||'Une erreur est survenue.')});
+
 document.querySelectorAll('.service-card').forEach(card=>{
- const storageKey='uniflow:service:'+card.dataset.serviceKey,id=Number(card.dataset.id||0);let state;
+ const storageKey='uniflow:service:'+card.dataset.serviceKey,id=Number(card.dataset.id||0);
+    let state;
+
  try{state=JSON.parse(localStorage.getItem(storageKey))}catch{state=null}
  const dbComments=Number(card.dataset.seedComments)||0;
+
  if(!state||typeof state!=='object')state={liked:card.dataset.liked==='true',likes:Number(card.dataset.seedLikes),comments:dbComments&&card.dataset.seedComment?[{author:card.dataset.seedAuthor,text:card.dataset.seedComment}]:[]};
- if(id){state.liked=card.dataset.liked==='true';state.likes=Number(card.dataset.seedLikes)}
+
+ if(id){state.liked=card.dataset.liked==='true';
+    state.likes=Number(card.dataset.seedLikes)}
  const likeButtons=[card.querySelector('.like-button'),card.querySelector('.favorite-button')].filter(Boolean),likeCount=card.querySelector('.like-count'),commentCount=card.querySelector('.comment-count'),commentPanel=card.querySelector('.comment-panel'),commentList=card.querySelector('.comment-list'),latest=card.querySelector('.latest-comment');
- function paintHeart(){likeButtons.forEach(button=>{button.setAttribute('aria-pressed',String(state.liked));if(button.classList.contains('favorite-button'))button.setAttribute('aria-label',state.liked?'Retirer des favoris':'Ajouter aux favoris');button.classList.toggle('text-rose-500',state.liked);const icon=button.querySelector('svg,i');if(icon)icon.classList.toggle('fill-current',state.liked)})}
+
+ function paintHeart(){likeButtons.forEach(button=>{button.setAttribute('aria-pressed',String(state.liked));
+    if(button.classList.contains('favorite-button'))button.setAttribute('aria-label',state.liked?'Retirer des favoris':'Ajouter aux favoris');
+    button.classList.toggle('text-rose-500',state.liked);
+    const icon=button.querySelector('svg,i');
+    if(icon)icon.classList.toggle('fill-current',state.liked)})}
  function save(){if(!id)localStorage.setItem(storageKey,JSON.stringify(state))}
- function draw(){paintHeart();likeCount.textContent=String(state.likes);commentCount.textContent=String(Math.max(dbComments,state.comments.length));commentList.replaceChildren();state.comments.slice(-3).reverse().forEach(comment=>{const row=document.createElement('p');row.className='rounded-lg bg-slate-50 px-3 py-2 text-[11px] text-slate-600';const author=document.createElement('strong');author.className='text-slate-800';author.textContent=comment.author+' ';row.append(author,document.createTextNode(comment.text));commentList.append(row)});const last=state.comments[state.comments.length-1];if(last){latest.replaceChildren();const author=document.createElement('strong');author.className='text-slate-700';author.textContent=last.author+' ';latest.append(author,document.createTextNode(last.text))}else latest.textContent='Pas encore d?avis.'}
- async function toggleLike(){if(id){let saved=false;likeButtons.forEach(button=>button.disabled=true);try{const response=await fetch('index.php?api=service-like&id='+id,{method:'POST'}),data=await response.json();if(!response.ok)throw Error(data.error||'Action impossible');state.liked=Boolean(data.liked);state.likes=Number(data.likes);card.dataset.liked=String(state.liked);saved=true}catch(error){console.error(error);window.alert(error.message||'Impossible de modifier le favori.')}finally{likeButtons.forEach(button=>button.disabled=false)}if(saved&&!state.liked&&new URLSearchParams(location.search).get('page')==='favorites'){location.reload();return}}else{state.liked=!state.liked;state.likes=Math.max(0,state.likes+(state.liked?1:-1));save()}draw()}
- draw();likeButtons.forEach(button=>button.addEventListener('click',toggleLike));
- const toggle=card.querySelector('.comment-toggle');toggle.addEventListener('click',()=>{const open=commentPanel.classList.contains('hidden');commentPanel.classList.toggle('hidden');toggle.setAttribute('aria-expanded',String(open))});
- card.querySelector('.comment-form').addEventListener('submit',event=>{event.preventDefault();const input=card.querySelector('.comment-input'),text=input.value.trim();if(!text)return;state.comments.push({author:currentCommenter,text});save();draw();input.value=''})
+ function draw(){paintHeart();
+    likeCount.textContent=String(state.likes);
+    commentCount.textContent=String(Math.max(dbComments,state.comments.length));
+    commentList.replaceChildren();
+    state.comments.slice(-3).reverse().forEach(comment=>{const row=document.createElement('p');
+    row.className='rounded-lg bg-slate-50 px-3 py-2 text-[11px] text-slate-600';
+    const author=document.createElement('strong');
+    author.className='text-slate-800';
+    author.textContent=comment.author+' ';
+    row.append(author,document.createTextNode(comment.text));
+    commentList.append(row)});
+    const last=state.comments[state.comments.length-1];
+    if(last){latest.replaceChildren();
+    const author=document.createElement('strong');
+    author.className='text-slate-700';
+    author.textContent=last.author+' ';
+    latest.append(author,document.createTextNode(last.text))}else latest.textContent='Pas encore d?avis.'}
+ async function toggleLike(){if(id){let saved=false;
+    likeButtons.forEach(button=>button.disabled=true);
+    try{const response=await fetch('index.php?api=service-like&id='+id,{method:'POST'}),data=await response.json();
+    if(!response.ok)throw Error(data.error||'Action impossible');
+    state.liked=Boolean(data.liked);
+    state.likes=Number(data.likes);
+    card.dataset.liked=String(state.liked);
+    saved=true}catch(error){console.error(error);
+    window.alert(error.message||'Impossible de modifier le favori.')}finally{likeButtons.forEach(button=>button.disabled=false)}if(saved&&!state.liked&&new URLSearchParams(location.search).get('page')==='favorites'){location.reload();
+    return}}else{state.liked=!state.liked;
+    state.likes=Math.max(0,state.likes+(state.liked?1:-1));
+    save()}draw()}
+ draw();
+    likeButtons.forEach(button=>button.addEventListener('click',toggleLike));
+
+ const toggle=card.querySelector('.comment-toggle');
+    toggle.addEventListener('click',()=>{const open=commentPanel.classList.contains('hidden');
+    commentPanel.classList.toggle('hidden');
+    toggle.setAttribute('aria-expanded',String(open))});
+
+ card.querySelector('.comment-form').addEventListener('submit',event=>{event.preventDefault();
+    const input=card.querySelector('.comment-input'),text=input.value.trim();
+    if(!text)return;
+    state.comments.push({author:currentCommenter,text});
+    save();
+    draw();
+    input.value=''})
 });
+
 lucide.createIcons();
+
 </script>
 <script>
 (()=>{
-async function updateNavUnread(){try{const response=await fetch('index.php?api=messages-unread');if(!response.ok)return;const data=await response.json(),link=document.querySelector('a[href="index.php?page=messages"]');let badge=document.getElementById('navMessagesBadge');if(Number(data.total)>0){if(!badge&&link){badge=document.createElement('b');badge.id='navMessagesBadge';badge.className='ml-auto grid h-5 min-w-5 place-items-center rounded-full bg-teal-600 px-1.5 text-white text-xs';link.append(badge)}if(badge)badge.textContent=String(data.total)}else badge?.remove()}catch{}}
+async function updateNavUnread(){try{const response=await fetch('index.php?api=messages-unread');
+    if(!response.ok)return;
+    const data=await response.json(),link=document.querySelector('a[href="index.php?page=messages"]');
+    let badge=document.getElementById('navMessagesBadge');
+    if(Number(data.total)>0){if(!badge&&link){badge=document.createElement('b');
+    badge.id='navMessagesBadge';
+    badge.className='ml-auto grid h-5 min-w-5 place-items-center rounded-full bg-teal-600 px-1.5 text-white text-xs';
+    link.append(badge)}if(badge)badge.textContent=String(data.total)}else badge?.remove()}catch{}}
 async function heartbeat(state='online'){try{await fetch('index.php?api=chat-presence',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({state})})}catch{}}
-async function connectNotifications(){try{const response=await fetch('index.php?api=chat-token&conversation=0'),data=await response.json();if(!response.ok)return;const scheme=location.protocol==='https:'?'wss':'ws',socket=new WebSocket(scheme+'://'+location.hostname+':8081?ticket='+encodeURIComponent(data.ticket));socket.addEventListener('message',event=>{try{if(JSON.parse(event.data).type==='unread')updateNavUnread()}catch{}});socket.addEventListener('close',()=>setTimeout(connectNotifications,5000));socket.addEventListener('error',()=>socket.close())}catch{setTimeout(connectNotifications,7000)}}
-updateNavUnread();heartbeat();connectNotifications();setInterval(updateNavUnread,10000);setInterval(()=>heartbeat(),15000);window.addEventListener('pagehide',()=>navigator.sendBeacon('index.php?api=chat-presence',new URLSearchParams({state:'offline'})))
+async function connectNotifications(){try{const response=await fetch('index.php?api=chat-token&conversation=0'),data=await response.json();
+    if(!response.ok)return;
+    const scheme=location.protocol==='https:'?'wss':'ws',socket=new WebSocket(scheme+'://'+location.hostname+':8081?ticket='+encodeURIComponent(data.ticket));
+    socket.addEventListener('message',event=>{try{if(JSON.parse(event.data).type==='unread')updateNavUnread()}catch{}});
+    socket.addEventListener('close',()=>setTimeout(connectNotifications,5000));
+    socket.addEventListener('error',()=>socket.close())}catch{setTimeout(connectNotifications,7000)}}
+updateNavUnread();
+    heartbeat();
+    connectNotifications();
+    setInterval(updateNavUnread,10000);
+    setInterval(()=>heartbeat(),15000);
+    window.addEventListener('pagehide',()=>navigator.sendBeacon('index.php?api=chat-presence',new URLSearchParams({state:'offline'})))
 })();
+
 </script>
-</body></html>
+</body>
+    </html>

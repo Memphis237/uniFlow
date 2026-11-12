@@ -1,36 +1,286 @@
-<?php
-declare(strict_types=1);
+﻿<?php
+
 require_once __DIR__ . '/../../Services/authService.php';
-if (isset($_GET['logout'])) { setcookie('uniflow_token', '', ['expires'=>time()-3600,'path'=>'/','secure'=>!empty($_SERVER['HTTPS'])&&$_SERVER['HTTPS']!=='off','httponly'=>true,'samesite'=>'Lax']); header('Location: index.php'); exit; }
-try { $user=auth_user_from_cookie(); } catch(Throwable $exception) { error_log($exception->__toString()); http_response_code(503); exit('Service temporairement indisponible.'); }
-if($user===null){header('Location: index.php?mode=login');exit;}
-if(($user['role']??'')==='admin'){header('Location: index.php?page=admin');exit;}
-$currentPage='home';$pageTitle='Découvrir';require_once __DIR__.'/../../Services/serviceCatalogService.php';$catalog=service_catalog_search(db(),(int)$user['Id_users'],[],false,3);$services=$catalog['services'];
-$events=[];
-try{$columns=db()->query('SHOW COLUMNS FROM Events')->fetchAll(PDO::FETCH_COLUMN);if(!in_array('published_until',$columns,true))db()->exec('ALTER TABLE Events ADD published_until DATETIME NULL');$eventQuery=db()->query("SELECT e.Id_events,e.title,e.description,e.location,e.starts_at,e.ends_at,u.avatar AS organizer_avatar,u.first_name AS organizer_first_name,u.name AS organizer_name,(SELECT m.file_path FROM Media m WHERE m.Id_events=e.Id_events ORDER BY m.Id_media DESC LIMIT 1) AS event_image,COUNT(ep.Id_users) AS participants FROM Events e JOIN Users u ON u.Id_users=e.Id_users LEFT JOIN Events_participants ep ON ep.Id_events=e.Id_events WHERE e.starts_at>=NOW() AND e.status NOT IN ('draft','cancelled','canceled') AND (e.published_until IS NULL OR e.published_until>NOW()) GROUP BY e.Id_events ORDER BY e.starts_at ASC LIMIT 6");$events=$eventQuery->fetchAll();}catch(Throwable $exception){error_log($exception->__toString());}
-require __DIR__.'/../components/header.php';require __DIR__.'/../components/navBar.php';
-$firstName=(string)($user['first_name']??'');
-$memberCount=0;$memberProfiles=[];
-try{$memberCount=(int)db()->query("SELECT COUNT(*) FROM Users WHERE status='active'")->fetchColumn();$memberProfiles=db()->query("SELECT first_name,name,avatar FROM Users WHERE status='active' ORDER BY created_at DESC,Id_users DESC LIMIT 3")->fetchAll();}catch(Throwable $exception){error_log($exception->__toString());}
+
+if (isset($_GET['logout'])) {
+    setcookie('uniflow_token', '', [
+        'expires' => time() - 3600,
+        'path' => '/',
+        'secure' => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+        'httponly' => true,
+        'samesite' => 'Lax',
+    ]);
+    header('Location: index.php');
+    exit;
+}
+
+try {
+    $user = auth_user_from_cookie();
+} catch (Throwable $exception) {
+    error_log($exception->__toString());
+    http_response_code(503);
+    exit('Service temporairement indisponible.');
+}
+
+if ($user === null) {
+    header('Location: index.php?mode=login');
+    exit;
+}
+
+if (($user['role'] ?? '') === 'admin') {
+    header('Location: index.php?page=admin');
+    exit;
+}
+
+$currentPage = 'home';
+$pageTitle = 'Découvrir';
+require_once __DIR__ . '/../../Services/serviceCatalogService.php';
+$catalog = service_catalog_search(db(), (int) $user['Id_users'], [], false, 3);
+$services = $catalog['services'];
+
+$events = [];
+try {
+    $columns = db()->query('SHOW COLUMNS FROM Events')->fetchAll(PDO::FETCH_COLUMN);
+    if (!in_array('published_until', $columns, true)) {
+        db()->exec('ALTER TABLE Events ADD published_until DATETIME NULL');
+    }
+    $eventQuery = db()->query(
+        "SELECT e.Id_events, e.title, e.description, e.location, e.starts_at, e.ends_at,
+            u.avatar AS organizer_avatar, u.first_name AS organizer_first_name,
+            u.name AS organizer_name,
+            (SELECT m.file_path FROM Media m
+             WHERE m.Id_events = e.Id_events
+             ORDER BY m.Id_media DESC LIMIT 1) AS event_image,
+            COUNT(ep.Id_users) AS participants
+        FROM Events e
+        JOIN Users u ON u.Id_users = e.Id_users
+        LEFT JOIN Events_participants ep ON ep.Id_events = e.Id_events
+        WHERE e.starts_at >= NOW()
+            AND e.status NOT IN ('draft', 'cancelled', 'canceled')
+            AND (e.published_until IS NULL OR e.published_until > NOW())
+        GROUP BY e.Id_events
+        ORDER BY e.starts_at ASC
+        LIMIT 6"
+    );
+    $events = $eventQuery->fetchAll();
+} catch (Throwable $exception) {
+    error_log($exception->__toString());
+}
+
+require __DIR__ . '/../components/header.php';
+require __DIR__ . '/../components/navBar.php';
+
+$firstName = (string) ($user['first_name'] ?? '');
+$memberCount = 0;
+$memberProfiles = [];
+try {
+    $memberCount = (int) db()->query(
+        "SELECT COUNT(*) FROM Users WHERE status = 'active'"
+    )->fetchColumn();
+    $memberProfiles = db()->query(
+        "SELECT first_name, name, avatar
+        FROM Users
+        WHERE status = 'active'
+        ORDER BY created_at DESC, Id_users DESC
+        LIMIT 3"
+    )->fetchAll();
+} catch (Throwable $exception) {
+    error_log($exception->__toString());
+}
 ?>
 <section class="px-5 md:px-8 py-8 max-w-[1500px] mx-auto">
- <p class="text-[11px] tracking-[.22em] font-bold text-teal-700 mb-3">LE CAMPUS, EN MIEUX</p>
- <h1 class="text-3xl md:text-[36px] font-extrabold tracking-tight text-slate-900">Salut <?= htmlspecialchars($firstName !== '' ? $firstName : (string)$user['name'], ENT_QUOTES, 'UTF-8') ?>, bienvenue chez toi <i class="fa-solid fa-sparkles text-teal-600" aria-hidden="true"></i></h1>
- <p class="mt-3 text-sm text-slate-500">Des talents à deux pas. Des petits prix. Et une communauté qui s’entraide.</p>
- <section class="mt-8 rounded-[28px] bg-[#dcf4f0] overflow-hidden grid lg:grid-cols-2 min-h-[420px]">
-  <div class="p-7 md:p-9 lg:p-10 flex flex-col justify-center"><p class="text-[11px] font-semibold tracking-[.18em] text-teal-700"><i class="fa-solid fa-people-group mr-1" aria-hidden="true"></i> ENTRE ÉTUDIANTS, TOUT SIMPLEMENT</p><h2 class="mt-5 text-4xl md:text-[46px] leading-[1.12] font-extrabold tracking-tight text-slate-900">Un coup de main.<br>Un petit prix.<br><span class="text-teal-600">Un grand lien.</span></h2><p class="mt-4 max-w-md text-sm leading-6 text-slate-600">Une coupe, un cours, un déménagement…<br>Trouve le bon talent sur ton campus,<br>ou partage le tien.</p><div class="mt-5 flex flex-wrap items-center gap-4"><a href="index.php?page=services" class="rounded-lg bg-[#124340] text-white px-5 py-3 font-semibold text-sm flex items-center gap-3">Trouver un service <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a><button onclick="toggleServiceModal()" class="text-sm text-teal-800 flex items-center gap-2">Proposer le mien <i class="fa-solid fa-plus" aria-hidden="true"></i></button></div><div class="mt-5 flex items-center gap-3"><div class="flex -space-x-2" aria-label="Membres UniFlow"><?php for($avatarIndex=0;$avatarIndex<3;$avatarIndex++): $memberProfile=$memberProfiles[$avatarIndex]??null; ?><span class="grid h-8 w-8 place-items-center overflow-hidden rounded-full border-2 border-[#dcf4f0] bg-white text-teal-700 shadow-sm"><?php if($memberProfile&&!empty($memberProfile["avatar"])): ?><img src="<?= htmlspecialchars($memberProfile["avatar"],ENT_QUOTES,"UTF-8") ?>" alt="" class="h-full w-full object-cover"><?php else: ?><i class="fa-solid fa-user text-xs" aria-hidden="true"></i><?php endif; ?></span><?php endfor; ?></div><p class="text-xs font-medium text-teal-800"><b><?= number_format($memberCount,0,","," ") ?></b> &eacute;tudiants ont rejoint UniFlow</p></div><small class="mt-1 text-xs text-slate-500">Le prochain talent, c’est peut-être toi.</small></div>
-  <div class="relative min-h-[280px]"><img class="absolute inset-0 w-full h-full object-cover" src="https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=1200&q=85" alt="Des étudiants qui se retrouvent sur le campus"><div class="absolute top-6 right-5 rounded-xl bg-white/95 p-4 shadow-lg"><b class="block text-sm"><i class="fa-solid fa-check text-teal-600" aria-hidden="true"></i> &nbsp;100 % étudiants</b><small class="text-slate-500">Des profils vérifiés, en confiance.</small></div><div class="absolute bottom-5 right-5 rounded-xl bg-white/95 px-4 py-3 text-sm text-teal-800"><i class="fa-solid fa-heart mr-1.5 text-rose-500" aria-hidden="true"></i> Le talent, pas le prix fort.</div></div>
- </section>
- <div class="py-5 grid grid-cols-2 lg:grid-cols-4 gap-4 text-xs text-slate-500"><span><i class="fa-solid fa-user-group text-teal-600" aria-hidden="true"></i> &nbsp;Des étudiants vérifiés</span><span><i class="fa-solid fa-heart text-rose-500" aria-hidden="true"></i> &nbsp;Des prix vraiment étudiants</span><span><i class="fa-solid fa-comments text-teal-600" aria-hidden="true"></i> &nbsp;Des échanges en direct</span><span><i class="fa-solid fa-location-dot text-teal-600" aria-hidden="true"></i> &nbsp;Tout près de chez toi</span></div>
- <div class="grid xl:grid-cols-[minmax(0,1fr)_270px] gap-7 mt-4"><div class="min-w-0 border-t border-slate-200 pt-6"><div class="flex justify-between items-start"><div><h2 class="text-2xl font-bold">De quoi as-tu besoin ?</h2><p class="mt-2 text-sm text-slate-500">Les bons talents, juste à côté.</p></div><a href="index.php?page=services" class="text-sm text-teal-700 flex items-center gap-2">Tout voir <i data-lucide="arrow-right" class="w-4 h-4"></i></a></div>
- <?php require __DIR__.'/../components/serviceSearch.php'; ?>
- <div class="mt-7 mb-4 flex items-center justify-between"><h2 class="text-lg font-bold">Les talents à découvrir</h2><span class="text-xs text-slate-400"><i class="fa-solid fa-circle-check text-teal-600" aria-hidden="true"></i> Près de ton campus</span></div><div class="service-grid grid md:grid-cols-2 xl:grid-cols-3 gap-4">
- <?php foreach(array_slice($services,0,3) as $service){require __DIR__.'/../components/serviceCard.php';} ?><p id="emptyResults" class="<?= $services?'hidden':'' ?> md:col-span-2 xl:col-span-3 py-10 text-center text-sm text-slate-500">Aucun service disponible pour le moment.</p></div>
- </div><aside class="hidden xl:block border-l border-slate-200 pl-6 pt-6"><div class="flex justify-between items-center"><h2 class="font-bold">Ça bouge sur le campus</h2><span class="w-2 h-2 bg-emerald-400 rounded-full"></span></div><div class="event-carousel mt-5 bg-white border border-slate-200 rounded-2xl overflow-hidden" data-event-count="<?= count($events) ?>">
- <?php foreach($events as $eventIndex=>$event): $eventColor=['from-teal-500 to-cyan-600','from-violet-500 to-indigo-600','from-amber-500 to-orange-600','from-rose-500 to-pink-600','from-sky-500 to-blue-600'][(int)$event['Id_events']%5]; $eventInitial=mb_strtoupper(mb_substr((string)($event['organizer_first_name']?:$event['organizer_name']),0,1)); ?><article class="event-slide <?= $eventIndex===0?'':'hidden' ?>" data-event-slide><div class="relative grid h-36 place-items-center overflow-hidden bg-gradient-to-br <?= $eventColor ?>"><?php if(!empty($event['event_image'])||!empty($event['organizer_avatar'])): ?><img class="absolute inset-0 h-full w-full object-cover" src="<?= htmlspecialchars((string)($event['event_image']?:$event['organizer_avatar']),ENT_QUOTES,'UTF-8') ?>" alt="Image de l’événement"><?php else: ?><span class="text-6xl font-bold text-white/90"><?= htmlspecialchars($eventInitial,ENT_QUOTES,'UTF-8') ?></span><?php endif; ?><span class="absolute top-3 left-3 bg-white rounded-lg px-3 py-2 text-center text-teal-800"><b class="block text-xl leading-5"><?= date('d M',strtotime($event['starts_at'])) ?></b></span></div><div class="p-4"><small class="text-teal-700"><i class="fa-solid fa-graduation-cap mr-1" aria-hidden="true"></i>UniFlow Campus</small><h3 class="mt-3 text-lg font-bold"><?= htmlspecialchars($event['title'],ENT_QUOTES,'UTF-8') ?></h3><p class="mt-4 flex items-center gap-2 text-xs text-slate-500"><i class="fa-solid fa-location-dot text-slate-400" aria-hidden="true"></i><?= htmlspecialchars((string)($event['location']?:'Campus Lyon'),ENT_QUOTES,'UTF-8') ?></p><p class="mt-2 flex items-center gap-2 text-xs text-slate-500"><i class="fa-regular fa-clock text-slate-400" aria-hidden="true"></i><?= date('d M',strtotime($event['starts_at'])) ?> - <?= date('H:i',strtotime($event['starts_at'])) ?><?= !empty($event['ends_at'])?' - '.date('H:i',strtotime($event['ends_at'])):'' ?></p><p class="mt-4 flex items-center gap-2 text-xs text-slate-500"><i class="fa-solid fa-user-group text-slate-400" aria-hidden="true"></i><?= (int)$event['participants'] ?> étudiants y vont</p><a href="index.php?page=campus" class="mt-4 block rounded-lg bg-teal-600 text-white text-center py-3 text-sm">Découvrir <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a></div></article><?php endforeach; ?>
- <?php if(count($events)>1): ?><div class="px-4 pb-4 flex items-center justify-between"><button type="button" class="event-prev rounded-full border border-slate-200 p-2" aria-label="Événement précédent"><i data-lucide="chevron-left" class="w-4 h-4"></i></button><div class="flex gap-1.5" aria-label="Sélectionner un événement"><?php foreach($events as $dotIndex=>$event): ?><button type="button" data-event-dot="<?= $dotIndex ?>" class="h-2 w-2 rounded-full <?= $dotIndex===0?'bg-teal-600 w-5':'bg-slate-300' ?>" aria-label="Afficher l’événement <?= $dotIndex+1 ?>"></button><?php endforeach; ?></div><button type="button" class="event-next rounded-full border border-slate-200 p-2" aria-label="Événement suivant"><i data-lucide="chevron-right" class="w-4 h-4"></i></button></div><?php endif; ?></div><a href="index.php?page=campus" class="mt-5 block text-center text-xs text-slate-500">Tous les événements <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a><div class="mt-8 rounded-xl border border-dashed border-teal-200 bg-teal-50/50 p-4"><p class="font-semibold text-sm text-teal-800">Ton école est aussi ici.</p><p class="mt-2 text-xs text-slate-500">Les actus et les moments à ne pas manquer, au même endroit.</p><a href="index.php?page=campus" class="mt-3 inline-block text-xs text-teal-700">Découvrir mon campus <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a></div></aside></div>
+<p class="text-[11px] tracking-[.22em] font-bold text-teal-700 mb-3">LE CAMPUS, EN MIEUX</p>
+<h1 class="text-3xl md:text-[36px] font-extrabold tracking-tight text-slate-900">Salut <?= htmlspecialchars($firstName !== '' ? $firstName : (string)$user['name'], ENT_QUOTES, 'UTF-8') ?>, bienvenue chez toi 
+    <i class="fa-solid fa-sparkles text-teal-600" aria-hidden="true"></i>
+</h1>
+<p class="mt-3 text-sm text-slate-500">Des talents à deux pas. Des petits prix. Et une communauté qui s’entraide.</p>
+<section class="mt-8 rounded-[28px] bg-[#dcf4f0] overflow-hidden grid lg:grid-cols-2 min-h-[420px]">
+<div class="p-7 md:p-9 lg:p-10 flex flex-col justify-center">
+    <p class="text-[11px] font-semibold tracking-[.18em] text-teal-700">
+    <i class="fa-solid fa-people-group mr-1" aria-hidden="true">
+    </i> ENTRE ÉTUDIANTS, TOUT SIMPLEMENT</p>
+    <h2 class="mt-5 text-4xl md:text-[46px] leading-[1.12] font-extrabold tracking-tight text-slate-900">Un coup de main.<br>Un petit prix.<br>
+    <span class="text-teal-600">Un grand lien.</span>
+    </h2>
+    <p class="mt-4 max-w-md text-sm leading-6 text-slate-600">Une coupe, un cours, un déménagement…<br>Trouve le bon talent sur ton campus,<br>ou partage le tien.</p>
+    <div class="mt-5 flex flex-wrap items-center gap-4">
+    <a href="index.php?page=services" class="rounded-lg bg-[#124340] text-white px-5 py-3 font-semibold text-sm flex items-center gap-3">Trouver un service <i class="fa-solid fa-arrow-right" aria-hidden="true">
+    </i>
+    </a>
+    <button onclick="toggleServiceModal()" class="text-sm text-teal-800 flex items-center gap-2">Proposer le mien <i class="fa-solid fa-plus" aria-hidden="true">
+    </i>
+    </button>
+    </div>
+    <div class="mt-5 flex items-center gap-3">
+    <div class="flex -space-x-2" aria-label="Membres UniFlow">
+    <?php for($avatarIndex=0;$avatarIndex<3;$avatarIndex++): $memberProfile=$memberProfiles[$avatarIndex]??null; ?>
+    <span class="grid h-8 w-8 place-items-center overflow-hidden rounded-full border-2 border-[#dcf4f0] bg-white text-teal-700 shadow-sm">
+    <?php if($memberProfile&&!empty($memberProfile["avatar"])): ?>
+    <img src="<?= htmlspecialchars($memberProfile["avatar"],ENT_QUOTES,"UTF-8") ?>" alt="" class="h-full w-full object-cover">
+    <?php else: ?>
+    <i class="fa-solid fa-user text-xs" aria-hidden="true">
+    </i>
+    <?php endif; ?>
+    </span>
+    <?php endfor; ?>
+    </div>
+    <p class="text-xs font-medium text-teal-800">
+    <b>
+    <?= number_format($memberCount,0,","," ") ?>
+    </b> &eacute;tudiants ont rejoint UniFlow</p>
+    </div>
+    <small class="mt-1 text-xs text-slate-500">Le prochain talent, c’est peut-être toi.</small>
+    </div>
+<div class="relative min-h-[280px]">
+    <img class="absolute inset-0 w-full h-full object-cover" src="https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=1200&q=85" alt="Des étudiants qui se retrouvent sur le campus">
+    <div class="absolute top-6 right-5 rounded-xl bg-white/95 p-4 shadow-lg">
+    <b class="block text-sm">
+    <i class="fa-solid fa-check text-teal-600" aria-hidden="true">
+    </i> &nbsp;100 % étudiants</b>
+    <small class="text-slate-500">Des profils vérifiés, en confiance.</small>
+    </div>
+    <div class="absolute bottom-5 right-5 rounded-xl bg-white/95 px-4 py-3 text-sm text-teal-800">
+    <i class="fa-solid fa-heart mr-1.5 text-rose-500" aria-hidden="true">
+    </i> Le talent, pas le prix fort.</div>
+    </div>
+</section>
+<div class="py-5 grid grid-cols-2 lg:grid-cols-4 gap-4 text-xs text-slate-500">
+    <span>
+    <i class="fa-solid fa-user-group text-teal-600" aria-hidden="true">
+    </i> &nbsp;Des étudiants vérifiés</span>
+    <span>
+    <i class="fa-solid fa-heart text-rose-500" aria-hidden="true">
+    </i> &nbsp;Des prix vraiment étudiants</span>
+    <span>
+    <i class="fa-solid fa-comments text-teal-600" aria-hidden="true">
+    </i> &nbsp;Des échanges en direct</span>
+    <span>
+    <i class="fa-solid fa-location-dot text-teal-600" aria-hidden="true">
+    </i> &nbsp;Tout près de chez toi</span>
+    </div>
+<div class="grid xl:grid-cols-[minmax(0,1fr)_270px] gap-7 mt-4">
+    <div class="min-w-0 border-t border-slate-200 pt-6">
+    <div class="flex justify-between items-start">
+    <div>
+    <h2 class="text-2xl font-bold">De quoi as-tu besoin ?</h2>
+    <p class="mt-2 text-sm text-slate-500">Les bons talents, juste à côté.</p>
+    </div>
+    <a href="index.php?page=services" class="text-sm text-teal-700 flex items-center gap-2">Tout voir <i data-lucide="arrow-right" class="w-4 h-4">
+    </i>
+    </a>
+    </div>
+<?php require __DIR__.'/../components/serviceSearch.php'; ?>
+<div class="mt-7 mb-4 flex items-center justify-between">
+    <h2 class="text-lg font-bold">Les talents à découvrir</h2>
+    <span class="text-xs text-slate-400">
+    <i class="fa-solid fa-circle-check text-teal-600" aria-hidden="true">
+    </i> Près de ton campus</span>
+    </div>
+    <div class="service-grid grid md:grid-cols-2 xl:grid-cols-3 gap-4">
+<?php foreach(array_slice($services,0,3) as $service){require __DIR__.'/../components/serviceCard.php';} ?>
+    <p id="emptyResults" class="<?= $services?'hidden':'' ?> md:col-span-2 xl:col-span-3 py-10 text-center text-sm text-slate-500">Aucun service disponible pour le moment.</p>
+    </div>
+</div>
+    <aside class="hidden xl:block border-l border-slate-200 pl-6 pt-6">
+    <div class="flex justify-between items-center">
+    <h2 class="font-bold">Ça bouge sur le campus</h2>
+    <span class="w-2 h-2 bg-emerald-400 rounded-full">
+    </span>
+    </div>
+    <div class="event-carousel mt-5 bg-white border border-slate-200 rounded-2xl overflow-hidden" data-event-count="<?= count($events) ?>">
+<?php foreach($events as $eventIndex=>$event): $eventColor=['from-teal-500 to-cyan-600','from-violet-500 to-indigo-600','from-amber-500 to-orange-600','from-rose-500 to-pink-600','from-sky-500 to-blue-600'][(int)$event['Id_events']%5]; $eventInitial=mb_strtoupper(mb_substr((string)($event['organizer_first_name']?:$event['organizer_name']),0,1)); ?>
+    <article class="event-slide <?= $eventIndex===0?'':'hidden' ?>" data-event-slide>
+    <div class="relative grid h-36 place-items-center overflow-hidden bg-gradient-to-br <?= $eventColor ?>">
+    <?php if(!empty($event['event_image'])||!empty($event['organizer_avatar'])): ?>
+    <img class="absolute inset-0 h-full w-full object-cover" src="<?= htmlspecialchars((string)($event['event_image']?:$event['organizer_avatar']),ENT_QUOTES,'UTF-8') ?>" alt="Image de l’événement">
+    <?php else: ?>
+    <span class="text-6xl font-bold text-white/90">
+    <?= htmlspecialchars($eventInitial,ENT_QUOTES,'UTF-8') ?>
+    </span>
+    <?php endif; ?>
+    <span class="absolute top-3 left-3 bg-white rounded-lg px-3 py-2 text-center text-teal-800">
+    <b class="block text-xl leading-5">
+    <?= date('d M',strtotime($event['starts_at'])) ?>
+    </b>
+    </span>
+    </div>
+    <div class="p-4">
+    <small class="text-teal-700">
+    <i class="fa-solid fa-graduation-cap mr-1" aria-hidden="true">
+    </i>UniFlow Campus</small>
+    <h3 class="mt-3 text-lg font-bold">
+    <?= htmlspecialchars($event['title'],ENT_QUOTES,'UTF-8') ?>
+    </h3>
+    <p class="mt-4 flex items-center gap-2 text-xs text-slate-500">
+    <i class="fa-solid fa-location-dot text-slate-400" aria-hidden="true">
+    </i>
+    <?= htmlspecialchars((string)($event['location']?:'Campus Lyon'),ENT_QUOTES,'UTF-8') ?>
+    </p>
+    <p class="mt-2 flex items-center gap-2 text-xs text-slate-500">
+    <i class="fa-regular fa-clock text-slate-400" aria-hidden="true">
+    </i>
+    <?= date('d M',strtotime($event['starts_at'])) ?> - <?= date('H:i',strtotime($event['starts_at'])) ?>
+    <?= !empty($event['ends_at'])?' - '.date('H:i',strtotime($event['ends_at'])):'' ?>
+    </p>
+    <p class="mt-4 flex items-center gap-2 text-xs text-slate-500">
+    <i class="fa-solid fa-user-group text-slate-400" aria-hidden="true">
+    </i>
+    <?= (int)$event['participants'] ?> étudiants y vont</p>
+    <a href="index.php?page=campus" class="mt-4 block rounded-lg bg-teal-600 text-white text-center py-3 text-sm">Découvrir <i class="fa-solid fa-arrow-right" aria-hidden="true">
+    </i>
+    </a>
+    </div>
+    </article>
+    <?php endforeach; ?>
+<?php if(count($events)>1): ?>
+    <div class="px-4 pb-4 flex items-center justify-between">
+    <button type="button" class="event-prev rounded-full border border-slate-200 p-2" aria-label="Événement précédent">
+    <i data-lucide="chevron-left" class="w-4 h-4">
+    </i>
+    </button>
+    <div class="flex gap-1.5" aria-label="Sélectionner un événement">
+    <?php foreach($events as $dotIndex=>$event): ?>
+    <button type="button" data-event-dot="<?= $dotIndex ?>" class="h-2 w-2 rounded-full <?= $dotIndex===0?'bg-teal-600 w-5':'bg-slate-300' ?>" aria-label="Afficher l’événement <?= $dotIndex+1 ?>">
+    </button>
+    <?php endforeach; ?>
+    </div>
+    <button type="button" class="event-next rounded-full border border-slate-200 p-2" aria-label="Événement suivant">
+    <i data-lucide="chevron-right" class="w-4 h-4">
+    </i>
+    </button>
+    </div>
+    <?php endif; ?>
+    </div>
+    <a href="index.php?page=campus" class="mt-5 block text-center text-xs text-slate-500">Tous les événements <i class="fa-solid fa-arrow-right" aria-hidden="true">
+    </i>
+    </a>
+    <div class="mt-8 rounded-xl border border-dashed border-teal-200 bg-teal-50/50 p-4">
+    <p class="font-semibold text-sm text-teal-800">Ton école est aussi ici.</p>
+    <p class="mt-2 text-xs text-slate-500">Les actus et les moments à ne pas manquer, au même endroit.</p>
+    <a href="index.php?page=campus" class="mt-3 inline-block text-xs text-teal-700">Découvrir mon campus <i class="fa-solid fa-arrow-right" aria-hidden="true">
+    </i>
+    </a>
+    </div>
+    </aside>
+    </div>
 <script>
-(()=>{const carousel=document.querySelector('.event-carousel');if(!carousel)return;const slides=[...carousel.querySelectorAll('[data-event-slide]')],dots=[...carousel.querySelectorAll('[data-event-dot]')];if(slides.length<2)return;let active=0;function show(index){active=(index+slides.length)%slides.length;slides.forEach((slide,i)=>slide.classList.toggle('hidden',i!==active));dots.forEach((dot,i)=>{dot.classList.toggle('bg-teal-600',i===active);dot.classList.toggle('bg-slate-300',i!==active);dot.classList.toggle('w-5',i===active);dot.classList.toggle('w-2',i!==active)})}carousel.querySelector('.event-prev').addEventListener('click',()=>show(active-1));carousel.querySelector('.event-next').addEventListener('click',()=>show(active+1));dots.forEach((dot,index)=>dot.addEventListener('click',()=>show(index)));let timer=setInterval(()=>show(active+1),6000);carousel.addEventListener('mouseenter',()=>clearInterval(timer));carousel.addEventListener('mouseleave',()=>timer=setInterval(()=>show(active+1),6000))})();
+(()=>{const carousel=document.querySelector('.event-carousel');
+    if(!carousel)return;
+    const slides=[...carousel.querySelectorAll('[data-event-slide]')],dots=[...carousel.querySelectorAll('[data-event-dot]')];
+    if(slides.length<2)return;
+    let active=0;
+    function show(index){active=(index+slides.length)%slides.length;
+    slides.forEach((slide,i)=>slide.classList.toggle('hidden',i!==active));
+    dots.forEach((dot,i)=>{dot.classList.toggle('bg-teal-600',i===active);
+    dot.classList.toggle('bg-slate-300',i!==active);
+    dot.classList.toggle('w-5',i===active);
+    dot.classList.toggle('w-2',i!==active)})}carousel.querySelector('.event-prev').addEventListener('click',()=>show(active-1));
+    carousel.querySelector('.event-next').addEventListener('click',()=>show(active+1));
+    dots.forEach((dot,index)=>dot.addEventListener('click',()=>show(index)));
+    let timer=setInterval(()=>show(active+1),6000);
+    carousel.addEventListener('mouseenter',()=>clearInterval(timer));
+    carousel.addEventListener('mouseleave',()=>timer=setInterval(()=>show(active+1),6000))})();
+
 </script>
 </section>
 <?php require __DIR__.'/../components/footer.php'; ?>
