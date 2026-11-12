@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 function chat_ws_publish(array $event): array

@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 require_once __DIR__ . '/../../Services/authService.php';
 
@@ -101,10 +101,10 @@ try {
     </div>
     <div class="mt-5 flex items-center gap-3">
     <div class="flex -space-x-2" aria-label="Membres UniFlow">
-    <?php for($avatarIndex=0;$avatarIndex<3;$avatarIndex++): $memberProfile=$memberProfiles[$avatarIndex]??null; ?>
+    <?php for ($avatarIndex = 0;$avatarIndex < 3;$avatarIndex++): $memberProfile = $memberProfiles[$avatarIndex] ?? null; ?>
     <span class="grid h-8 w-8 place-items-center overflow-hidden rounded-full border-2 border-[#dcf4f0] bg-white text-teal-700 shadow-sm">
-    <?php if($memberProfile&&!empty($memberProfile["avatar"])): ?>
-    <img src="<?= htmlspecialchars($memberProfile["avatar"],ENT_QUOTES,"UTF-8") ?>" alt="" class="h-full w-full object-cover">
+    <?php if ($memberProfile && !empty($memberProfile["avatar"])): ?>
+    <img src="<?= htmlspecialchars($memberProfile["avatar"], ENT_QUOTES, "UTF-8") ?>" alt="" class="h-full w-full object-cover">
     <?php else: ?>
     <i class="fa-solid fa-user text-xs" aria-hidden="true">
     </i>
@@ -114,7 +114,7 @@ try {
     </div>
     <p class="text-xs font-medium text-teal-800">
     <b>
-    <?= number_format($memberCount,0,","," ") ?>
+    <?= number_format($memberCount, 0, ",", " ") ?>
     </b> &eacute;tudiants ont rejoint UniFlow</p>
     </div>
     <small class="mt-1 text-xs text-slate-500">Le prochain talent, c’est peut-être toi.</small>
@@ -165,8 +165,10 @@ try {
     </i> Près de ton campus</span>
     </div>
     <div class="service-grid grid md:grid-cols-2 xl:grid-cols-3 gap-4">
-<?php foreach(array_slice($services,0,3) as $service){require __DIR__.'/../components/serviceCard.php';} ?>
-    <p id="emptyResults" class="<?= $services?'hidden':'' ?> md:col-span-2 xl:col-span-3 py-10 text-center text-sm text-slate-500">Aucun service disponible pour le moment.</p>
+<?php foreach (array_slice($services, 0, 3) as $service) {
+    require __DIR__.'/../components/serviceCard.php';
+} ?>
+    <p id="emptyResults" class="<?= $services ? 'hidden' : '' ?> md:col-span-2 xl:col-span-3 py-10 text-center text-sm text-slate-500">Aucun service disponible pour le moment.</p>
     </div>
 </div>
     <aside class="hidden xl:block border-l border-slate-200 pl-6 pt-6">
@@ -176,19 +178,20 @@ try {
     </span>
     </div>
     <div class="event-carousel mt-5 bg-white border border-slate-200 rounded-2xl overflow-hidden" data-event-count="<?= count($events) ?>">
-<?php foreach($events as $eventIndex=>$event): $eventColor=['from-teal-500 to-cyan-600','from-violet-500 to-indigo-600','from-amber-500 to-orange-600','from-rose-500 to-pink-600','from-sky-500 to-blue-600'][(int)$event['Id_events']%5]; $eventInitial=mb_strtoupper(mb_substr((string)($event['organizer_first_name']?:$event['organizer_name']),0,1)); ?>
-    <article class="event-slide <?= $eventIndex===0?'':'hidden' ?>" data-event-slide>
+<?php foreach ($events as $eventIndex => $event): $eventColor = ['from-teal-500 to-cyan-600','from-violet-500 to-indigo-600','from-amber-500 to-orange-600','from-rose-500 to-pink-600','from-sky-500 to-blue-600'][(int)$event['Id_events'] % 5];
+    $eventInitial = mb_strtoupper(mb_substr((string)($event['organizer_first_name'] ?: $event['organizer_name']), 0, 1)); ?>
+    <article class="event-slide <?= $eventIndex === 0 ? '' : 'hidden' ?>" data-event-slide>
     <div class="relative grid h-36 place-items-center overflow-hidden bg-gradient-to-br <?= $eventColor ?>">
-    <?php if(!empty($event['event_image'])||!empty($event['organizer_avatar'])): ?>
-    <img class="absolute inset-0 h-full w-full object-cover" src="<?= htmlspecialchars((string)($event['event_image']?:$event['organizer_avatar']),ENT_QUOTES,'UTF-8') ?>" alt="Image de l’événement">
+    <?php if (!empty($event['event_image']) || !empty($event['organizer_avatar'])): ?>
+    <img class="absolute inset-0 h-full w-full object-cover" src="<?= htmlspecialchars((string)($event['event_image'] ?: $event['organizer_avatar']), ENT_QUOTES, 'UTF-8') ?>" alt="Image de l’événement">
     <?php else: ?>
     <span class="text-6xl font-bold text-white/90">
-    <?= htmlspecialchars($eventInitial,ENT_QUOTES,'UTF-8') ?>
+    <?= htmlspecialchars($eventInitial, ENT_QUOTES, 'UTF-8') ?>
     </span>
     <?php endif; ?>
     <span class="absolute top-3 left-3 bg-white rounded-lg px-3 py-2 text-center text-teal-800">
     <b class="block text-xl leading-5">
-    <?= date('d M',strtotime($event['starts_at'])) ?>
+    <?= date('d M', strtotime($event['starts_at'])) ?>
     </b>
     </span>
     </div>
@@ -197,18 +200,18 @@ try {
     <i class="fa-solid fa-graduation-cap mr-1" aria-hidden="true">
     </i>UniFlow Campus</small>
     <h3 class="mt-3 text-lg font-bold">
-    <?= htmlspecialchars($event['title'],ENT_QUOTES,'UTF-8') ?>
+    <?= htmlspecialchars($event['title'], ENT_QUOTES, 'UTF-8') ?>
     </h3>
     <p class="mt-4 flex items-center gap-2 text-xs text-slate-500">
     <i class="fa-solid fa-location-dot text-slate-400" aria-hidden="true">
     </i>
-    <?= htmlspecialchars((string)($event['location']?:'Campus Lyon'),ENT_QUOTES,'UTF-8') ?>
+    <?= htmlspecialchars((string)($event['location'] ?: 'Campus Lyon'), ENT_QUOTES, 'UTF-8') ?>
     </p>
     <p class="mt-2 flex items-center gap-2 text-xs text-slate-500">
     <i class="fa-regular fa-clock text-slate-400" aria-hidden="true">
     </i>
-    <?= date('d M',strtotime($event['starts_at'])) ?> - <?= date('H:i',strtotime($event['starts_at'])) ?>
-    <?= !empty($event['ends_at'])?' - '.date('H:i',strtotime($event['ends_at'])):'' ?>
+    <?= date('d M', strtotime($event['starts_at'])) ?> - <?= date('H:i', strtotime($event['starts_at'])) ?>
+    <?= !empty($event['ends_at']) ? ' - '.date('H:i', strtotime($event['ends_at'])) : '' ?>
     </p>
     <p class="mt-4 flex items-center gap-2 text-xs text-slate-500">
     <i class="fa-solid fa-user-group text-slate-400" aria-hidden="true">
@@ -220,15 +223,15 @@ try {
     </div>
     </article>
     <?php endforeach; ?>
-<?php if(count($events)>1): ?>
+<?php if (count($events) > 1): ?>
     <div class="px-4 pb-4 flex items-center justify-between">
     <button type="button" class="event-prev rounded-full border border-slate-200 p-2" aria-label="Événement précédent">
     <i data-lucide="chevron-left" class="w-4 h-4">
     </i>
     </button>
     <div class="flex gap-1.5" aria-label="Sélectionner un événement">
-    <?php foreach($events as $dotIndex=>$event): ?>
-    <button type="button" data-event-dot="<?= $dotIndex ?>" class="h-2 w-2 rounded-full <?= $dotIndex===0?'bg-teal-600 w-5':'bg-slate-300' ?>" aria-label="Afficher l’événement <?= $dotIndex+1 ?>">
+    <?php foreach ($events as $dotIndex => $event): ?>
+    <button type="button" data-event-dot="<?= $dotIndex ?>" class="h-2 w-2 rounded-full <?= $dotIndex === 0 ? 'bg-teal-600 w-5' : 'bg-slate-300' ?>" aria-label="Afficher l’événement <?= $dotIndex + 1 ?>">
     </button>
     <?php endforeach; ?>
     </div>
@@ -251,24 +254,6 @@ try {
     </div>
     </aside>
     </div>
-<script>
-(()=>{const carousel=document.querySelector('.event-carousel');
-    if(!carousel)return;
-    const slides=[...carousel.querySelectorAll('[data-event-slide]')],dots=[...carousel.querySelectorAll('[data-event-dot]')];
-    if(slides.length<2)return;
-    let active=0;
-    function show(index){active=(index+slides.length)%slides.length;
-    slides.forEach((slide,i)=>slide.classList.toggle('hidden',i!==active));
-    dots.forEach((dot,i)=>{dot.classList.toggle('bg-teal-600',i===active);
-    dot.classList.toggle('bg-slate-300',i!==active);
-    dot.classList.toggle('w-5',i===active);
-    dot.classList.toggle('w-2',i!==active)})}carousel.querySelector('.event-prev').addEventListener('click',()=>show(active-1));
-    carousel.querySelector('.event-next').addEventListener('click',()=>show(active+1));
-    dots.forEach((dot,index)=>dot.addEventListener('click',()=>show(index)));
-    let timer=setInterval(()=>show(active+1),6000);
-    carousel.addEventListener('mouseenter',()=>clearInterval(timer));
-    carousel.addEventListener('mouseleave',()=>timer=setInterval(()=>show(active+1),6000))})();
-
-</script>
+<script src="assets/js/home.js" defer></script>
 </section>
 <?php require __DIR__.'/../components/footer.php'; ?>

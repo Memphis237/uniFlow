@@ -8,7 +8,11 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "chat:ws": "node server/chat-ws.js"
+    "chat:ws": "node server/chat-ws.js",
+    "css:build": "tailwindcss -i ./src/Styles/input.css -o ./public/assets/css/app.css --minify",
+    "css:watch": "tailwindcss -i ./src/Styles/input.css -o ./public/assets/css/app.css --watch",
+    "format:js": "prettier --write \"public/assets/js/**/*.js\" \"server/**/*.js\"",
+    "format:js:check": "prettier --check \"public/assets/js/**/*.js\" \"server/**/*.js\""
   },
   "repository": {
     "type": "git",
@@ -24,6 +28,7 @@
   "homepage": "https://github.com/Memphis237/uniFlow#readme",
   "devDependencies": {
     "@tailwindcss/cli": "^4.3.3",
+    "prettier": "^3.10.1",
     "tailwindcss": "^4.3.3"
   },
   "dependencies": {

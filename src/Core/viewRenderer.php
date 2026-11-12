@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 function render_view(string $template, array $data = []): void

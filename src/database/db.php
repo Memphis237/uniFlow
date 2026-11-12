@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 /** Charge les variables du fichier .env sans dépendance externe. */
@@ -11,7 +12,9 @@ function app_env(string $key, ?string $default = null): ?string
         if (is_file($file) && is_readable($file)) {
             foreach (file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [] as $line) {
                 $line = trim($line);
-                if ($line === '' || str_starts_with($line, '#') || !str_contains($line, '=')) continue;
+                if ($line === '' || str_starts_with($line, '#') || !str_contains($line, '=')) {
+                    continue;
+                }
                 [$name, $value] = explode('=', $line, 2);
                 $values[trim($name)] = trim(trim($value), "\"'");
             }
@@ -24,7 +27,9 @@ function app_env(string $key, ?string $default = null): ?string
 function db(): PDO
 {
     static $pdo;
-    if ($pdo instanceof PDO) return $pdo;
+    if ($pdo instanceof PDO) {
+        return $pdo;
+    }
     $host = app_env('DB_HOST', 'localhost');
     $port = app_env('DB_PORT', '3306');
     $name = app_env('DB_NAME', 'uniflow');

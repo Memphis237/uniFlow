@@ -1,6 +1,8 @@
 <?php
 $userName = trim((string) (($user['first_name'] ?? '') . ' ' . ($user['name'] ?? '')));
-if ($userName === '') $userName = 'Mon profil';
+if ($userName === '') {
+    $userName = 'Mon profil';
+}
 ?>
 <!doctype html>
 <html lang="fr">
@@ -10,15 +12,21 @@ if ($userName === '') $userName = 'Mon profil';
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#f6f9fa">
     <title><?= htmlspecialchars($pageTitle ?? 'UniFlow', ENT_QUOTES, 'UTF-8') ?> — UniFlow</title>
-    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" referrerpolicy="no-referrer">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="assets/css/app.css">
-    <script src="assets/js/clear-legacy-auth.js" defer></script>
-    <style>body{font-family:'Plus Jakarta Sans',sans-serif}.category-button{transition:background-color .18s,color .18s}.category-button:hover{background:#f0fdfa}.category-button.active-category{background:#e8f7f5;color:#008b96}</style>
+    <link
+        rel="stylesheet"
+        href="assets/css/app.css?v=<?= filemtime(dirname(__DIR__, 3) . '/public/assets/css/app.css') ?>"
+    >
+    <style>
+    body{font-family:'Plus Jakarta Sans',sans-serif}
+    .category-button{transition:background-color .18s,color .18s}
+    .category-button:hover{background:#f0fdfa}
+    .category-button.active-category{background:#e8f7f5;color:#008b96}
+    </style>
 </head>
 <body class="bg-[#f6f9fa] text-slate-800 min-h-screen">
 <header class="h-[76px] bg-white border-b border-slate-200 sticky top-0 z-30 md:pl-[260px]">
@@ -28,7 +36,7 @@ if ($userName === '') $userName = 'Mon profil';
         <span class="hidden sm:block h-5 border-l border-slate-200"></span>
         <button type="button" onclick="toggleLocationModal()" class="hidden sm:flex items-center gap-2 text-sm text-slate-500">
             <i data-lucide="map-pin" class="w-4 h-4"></i> 
-            <?= htmlspecialchars(trim((string)($user['city']??'').' '.(string)($user['country']??'')) ?: (trim((string)($user['adresse']??'').' '.(string)($user['postal_code']??'')) ?: 'Definir ma localisation'),ENT_QUOTES,'UTF-8') ?>
+            <?= htmlspecialchars(trim((string)($user['city'] ?? '').' '.(string)($user['country'] ?? '')) ?: (trim((string)($user['adresse'] ?? '').' '.(string)($user['postal_code'] ?? '')) ?: 'Definir ma localisation'), ENT_QUOTES, 'UTF-8') ?>
         </button>
     </div>
     <div class="flex items-center gap-4">
@@ -40,8 +48,8 @@ if ($userName === '') $userName = 'Mon profil';
             <i data-lucide="bell" class="w-5 h-5"></i>
         </button>
         <span class="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full bg-teal-100 font-bold text-teal-800">
-            <?php if(!empty($user['avatar'])): ?>
-                <img src="<?= htmlspecialchars((string)$user['avatar'],ENT_QUOTES,'UTF-8') ?>" alt="Photo de profil de <?= htmlspecialchars($userName,ENT_QUOTES,'UTF-8') ?>" class="h-full w-full object-cover">
+            <?php if (!empty($user['avatar'])): ?>
+                <img src="<?= htmlspecialchars((string)$user['avatar'], ENT_QUOTES, 'UTF-8') ?>" alt="Photo de profil de <?= htmlspecialchars($userName, ENT_QUOTES, 'UTF-8') ?>" class="h-full w-full object-cover">
             <?php else: ?>
                 <?= htmlspecialchars(mb_strtoupper(mb_substr($userName, 0, 1)), ENT_QUOTES, 'UTF-8') ?>
             <?php endif; ?>

@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 function chat_model_is_member(PDO $database, int $userId, int $conversationId): bool

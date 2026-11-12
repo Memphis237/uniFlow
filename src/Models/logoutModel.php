@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 function logout_model_mark_offline(PDO $database, int $userId): array

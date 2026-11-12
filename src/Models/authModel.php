@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 function auth_model_find_active_by_id(PDO $database, int $userId): ?array

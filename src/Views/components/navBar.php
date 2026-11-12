@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 $navItems = [
     ['home', 'Découvrir', 'house'],
     ['services', 'Tous les services', 'layout-grid'],

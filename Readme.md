@@ -2,6 +2,8 @@
 
 ## Configuration locale
 
+Installez les dépendances front-end avec `npm install`, puis générez `public/assets/css/app.css` avec `npm run css:build`. Pendant le développement, utilisez `npm run css:watch` pour reconstruire le CSS à chaque modification des vues.
+
 1. Créez un fichier .env à la racine en copiant .env.exemple, puis renseignez les accès MySQL.
 2. Remplacez JWT_SECRET par une clé privée aléatoire d'au moins 32 caractères. Ne partagez pas ce secret.
 3. Importez src/database/schema.sql dans MySQL. La table Users doit contenir les colonnes name, email, password, role et status définies dans ce schéma.

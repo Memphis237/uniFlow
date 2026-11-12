@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 function service_model_create(PDO $database, array $actor, array $data): void

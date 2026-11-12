@@ -23,7 +23,7 @@
             $active = (int) $item['Id_conversations'] === $conversation;
             $unread = (int) $item['unread'];
             $isOnline = (bool) $item['peer_online'];
-        ?>
+            ?>
             <a
                 data-chat-item
                 data-conversation="<?= (int) $item['Id_conversations'] ?>"
