@@ -34,7 +34,45 @@ if (($_GET['api'] ?? '') !== '') {
             if ($api==='service-like' && $_SERVER['REQUEST_METHOD']==='POST') { $q=$pdo->prepare('INSERT IGNORE INTO Favorites(Id_services,Id_users) VALUES(:s,:u)');$q->execute(['s'=>$serviceId,'u'=>$actor['Id_users']]);if(!$q->rowCount()){$q=$pdo->prepare('DELETE FROM Favorites WHERE Id_services=:s AND Id_users=:u');$q->execute(['s'=>$serviceId,'u'=>$actor['Id_users']]);}$q=$pdo->prepare('SELECT COUNT(*) FROM Favorites WHERE Id_services=:s');$q->execute(['s'=>$serviceId]);$likes=(int)$q->fetchColumn();$q=$pdo->prepare('SELECT EXISTS(SELECT 1 FROM Favorites WHERE Id_services=:s AND Id_users=:u)');$q->execute(['s'=>$serviceId,'u'=>$actor['Id_users']]);echo json_encode(['likes'=>$likes,'liked'=>(bool)$q->fetchColumn()]);exit; }
             if ($api==='service-detail') { $q=$pdo->prepare('SELECT s.*,u.first_name,u.name,COALESCE((SELECT m.file_path FROM Media m WHERE m.Id_services=s.Id_services ORDER BY m.Id_media LIMIT 1),\'\') image,(SELECT COUNT(*) FROM Favorites f WHERE f.Id_services=s.Id_services) likes FROM Services s JOIN Users u ON u.Id_users=s.Id_users WHERE s.Id_services=:id LIMIT 1');$q->execute(['id'=>$serviceId]);$service=$q->fetch();if(!$service){http_response_code(404);echo json_encode(['error'=>'Service introuvable']);exit;}$media=$pdo->prepare('SELECT file_path FROM Media WHERE Id_services=:id ORDER BY Id_media');$media->execute(['id'=>$serviceId]);$service['images']=array_column($media->fetchAll(),'file_path');if(!$service['images']&&$service['image']!=='')$service['images']=[$service['image']];$r=$pdo->prepare('SELECT r.rating,r.comment,r.created_at,u.first_name,u.name FROM Reviews r JOIN Users u ON u.Id_users=r.Id_users JOIN Bookings b ON b.Id_bookings=r.Id_bookings WHERE b.Id_services=:id ORDER BY r.created_at DESC');$r->execute(['id'=>$serviceId]);echo json_encode(['service'=>$service,'reviews'=>$r->fetchAll()]);exit; }
             if ($api==='booking-create' && $_SERVER['REQUEST_METHOD']==='POST') { $q=$pdo->prepare('INSERT INTO Bookings(scheduled_at,message,Id_services,Id_users) SELECT :date,:message,Id_services,:user FROM Services WHERE Id_services=:service AND Id_users<>:user2');$q->execute(['date'=>$_POST['scheduled_at']??'','message'=>trim((string)($_POST['message']??'')),'user'=>$actor['Id_users'],'service'=>$serviceId,'user2'=>$actor['Id_users']]);if(!$q->rowCount())throw new RuntimeException('Date invalide ou service indisponible.');echo json_encode(['ok'=>true]);exit; }
-            if ($api==='review-create' && $_SERVER['REQUEST_METHOD']==='POST') { $q=$pdo->prepare("INSERT INTO Reviews(rating,comment,Id_bookings,Id_users) SELECT :rating,:comment,Id_bookings,:user FROM Bookings WHERE Id_services=:service AND Id_users=:user2 AND status='completed' LIMIT 1");$q->execute(['rating'=>max(1,min(5,(int)($_POST['rating']??5))),'comment'=>trim((string)($_POST['comment']??'')),'user'=>$actor['Id_users'],'service'=>$serviceId,'user2'=>$actor['Id_users']]);if(!$q->rowCount())throw new RuntimeException('Un avis peut être publié après un rendez-vous terminé.');echo json_encode(['ok'=>true]);exit; }
+            if ($api === 'review-create' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+                $rating = filter_var($_POST['rating'] ?? null, FILTER_VALIDATE_INT);
+                $comment = trim((string) ($_POST['comment'] ?? ''));
+
+                if ($rating === false || $rating < 1 || $rating > 5) {
+                    throw new RuntimeException('Choisis une note entre 1 et 5 étoiles.');
+                }
+                if ($comment === '' || mb_strlen($comment) > 255) {
+                    throw new RuntimeException('Ton avis doit contenir entre 1 et 255 caractères.');
+                }
+
+                $review = $pdo->prepare(
+                    "INSERT INTO Reviews(rating, comment, Id_bookings, Id_users)
+                    SELECT :rating, :comment, b.Id_bookings, :user
+                    FROM Bookings b
+                    WHERE b.Id_services = :service
+                        AND b.Id_users = :reviewer
+                        AND b.status = 'completed'
+                        AND NOT EXISTS (
+                            SELECT 1 FROM Reviews existing
+                            WHERE existing.Id_bookings = b.Id_bookings
+                        )
+                    ORDER BY b.Id_bookings
+                    LIMIT 1"
+                );
+                $review->execute([
+                    'rating' => $rating,
+                    'comment' => $comment,
+                    'user' => $actor['Id_users'],
+                    'service' => $serviceId,
+                    'reviewer' => $actor['Id_users'],
+                ]);
+
+                if (!$review->rowCount()) {
+                    throw new RuntimeException('Un avis peut être publié une seule fois après un rendez-vous terminé.');
+                }
+                echo json_encode(['ok' => true]);
+                exit;
+            }
             if ($api==='contact' && $_SERVER['REQUEST_METHOD']==='POST') { $q=$pdo->prepare('SELECT Id_users FROM Services WHERE Id_services=:id');$q->execute(['id'=>$serviceId]);$owner=(int)$q->fetchColumn();if(!$owner||$owner===(int)$actor['Id_users'])throw new RuntimeException('Contact indisponible.');$pdo->beginTransaction();try{$find=$pdo->prepare('SELECT l1.Id_conversations FROM lier l1 JOIN lier l2 ON l1.Id_conversations=l2.Id_conversations WHERE l1.Id_users=:a AND l2.Id_users=:b LIMIT 1');$find->execute(['a'=>$actor['Id_users'],'b'=>$owner]);$conversation=(int)$find->fetchColumn();if(!$conversation){$pdo->exec('INSERT INTO Conversations() VALUES()');$conversation=(int)$pdo->lastInsertId();$link=$pdo->prepare('INSERT INTO lier(Id_users,Id_conversations) VALUES(:u,:c)');$link->execute(['u'=>$actor['Id_users'],'c'=>$conversation]);$link->execute(['u'=>$owner,'c'=>$conversation]);}$pdo->commit();}catch(Throwable $e){$pdo->rollBack();throw $e;}echo json_encode(['redirect'=>'index.php?page=messages&conversation='.$conversation]);exit; }
         }
         if ($_GET['api'] === 'auth' && $_SERVER['REQUEST_METHOD'] === 'POST') {
