@@ -1,10 +1,6 @@
 <?php
 declare(strict_types=1);
 require_once __DIR__ . '/../../Services/authService.php';
-if (isset($_GET['logout'])) {
-    setcookie('uniflow_token', '', ['expires' => time() - 3600, 'path' => '/', 'secure' => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off', 'httponly' => true, 'samesite' => 'Lax']);
-    header('Location: index.php'); exit;
-}
 try { $user = auth_user_from_cookie(); } catch (Throwable $exception) { error_log($exception->__toString()); http_response_code(503); exit('Service temporairement indisponible.'); }
 if ($user === null) { header('Location: index.php?mode=login'); exit; }
 if (($user['role'] ?? '') === 'admin') { header('Location: index.php?page=admin'); exit; }

@@ -75,20 +75,6 @@ if (($_GET['api'] ?? '') !== '') {
             }
             if ($api==='contact' && $_SERVER['REQUEST_METHOD']==='POST') { $q=$pdo->prepare('SELECT Id_users FROM Services WHERE Id_services=:id');$q->execute(['id'=>$serviceId]);$owner=(int)$q->fetchColumn();if(!$owner||$owner===(int)$actor['Id_users'])throw new RuntimeException('Contact indisponible.');$pdo->beginTransaction();try{$find=$pdo->prepare('SELECT l1.Id_conversations FROM lier l1 JOIN lier l2 ON l1.Id_conversations=l2.Id_conversations WHERE l1.Id_users=:a AND l2.Id_users=:b LIMIT 1');$find->execute(['a'=>$actor['Id_users'],'b'=>$owner]);$conversation=(int)$find->fetchColumn();if(!$conversation){$pdo->exec('INSERT INTO Conversations() VALUES()');$conversation=(int)$pdo->lastInsertId();$link=$pdo->prepare('INSERT INTO lier(Id_users,Id_conversations) VALUES(:u,:c)');$link->execute(['u'=>$actor['Id_users'],'c'=>$conversation]);$link->execute(['u'=>$owner,'c'=>$conversation]);}$pdo->commit();}catch(Throwable $e){$pdo->rollBack();throw $e;}echo json_encode(['redirect'=>'index.php?page=messages&conversation='.$conversation]);exit; }
         }
-        if ($_GET['api'] === 'auth' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-            $input = json_decode((string) file_get_contents('php://input'), true, 512, JSON_THROW_ON_ERROR);
-            $user = auth_handle((string) ($input['action'] ?? 'login'), (string) ($input['name'] ?? ''), (string) ($input['email'] ?? ''), (string) ($input['password'] ?? ''), (string) ($input['first_name'] ?? ''));
-            $token = auth_create_token($user);
-            auth_set_cookie($user);
-            echo json_encode(['token' => $token], JSON_THROW_ON_ERROR);
-            exit;
-        }
-        if ($_GET['api'] === 'me' && $_SERVER['REQUEST_METHOD'] === 'GET') {
-            $user = auth_user_from_authorization();
-            if ($user === null) http_response_code(401);
-            echo json_encode(['user' => $user], JSON_THROW_ON_ERROR);
-            exit;
-        }
         http_response_code(404);
         echo json_encode(['error' => 'Requête inconnue.']);
     } catch (RuntimeException $exception) {
@@ -150,7 +136,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             throw new RuntimeException('Votre session a expiré. Rechargez la page et réessayez.');
         }
         $user = auth_handle($mode, $oldName, $oldEmail, (string) ($_POST['password'] ?? ''), $oldFirstName);
-        $loginToken = auth_create_token($user);
         auth_set_cookie($user);
         $redirectPage = ($user['role'] ?? '') === 'admin' ? 'admin' : 'home';
     } catch (RuntimeException $exception) {
@@ -169,6 +154,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'Une erreur est survenue. Vérifiez la configuration de la base de données puis réessayez.';
     }
 }
+if (isset($redirectPage)) {
+    header('Location: index.php?page=' . rawurlencode($redirectPage));
+    exit;
+}
 if ($mode === 'login' && $loginLockedUntil === 0) {
     $attemptState = auth_login_attempt_state();
     $loginLockedUntil = $attemptState['locked_until'];
@@ -183,6 +172,7 @@ if ($mode === 'login' && $loginLockedUntil === 0) {
     <title><?= $mode === 'register' ? 'Créer un compte' : 'Connexion' ?> — UniFlow</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" referrerpolicy="no-referrer">
     <link rel="stylesheet" href="assets/css/auth.css?v=7">
+    <script src="assets/js/clear-legacy-auth.js" defer></script>
 </head>
 <body class="auth-page">
     <main class="auth-shell">
@@ -243,13 +233,7 @@ if ($mode === 'login' && $loginLockedUntil === 0) {
         </section>
     </main>
     <script>
-    const loginToken = <?= json_encode($loginToken ?? null, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
-    const redirectPage = <?= json_encode($redirectPage ?? 'home', JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
     const loginLockedUntil = <?= (int) $loginLockedUntil ?>;
-    if (loginToken) {
-        localStorage.setItem('uniflow_token', loginToken);
-        window.location.replace('index.php?page=' + redirectPage);
-    }
     if (loginLockedUntil > Math.floor(Date.now() / 1000)) {
         const overlay = document.createElement('div');
         overlay.className = 'lock-modal-backdrop';

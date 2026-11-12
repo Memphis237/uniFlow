@@ -16,6 +16,7 @@ if ($userName === '') $userName = 'Mon profil';
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/css/app.css">
+    <script src="assets/js/clear-legacy-auth.js" defer></script>
     <style>body{font-family:'Plus Jakarta Sans',sans-serif}.category-button{transition:background-color .18s,color .18s}.category-button:hover{background:#f0fdfa}.category-button.active-category{background:#e8f7f5;color:#008b96}</style>
 </head>
 <body class="bg-[#f6f9fa] text-slate-800 min-h-screen">

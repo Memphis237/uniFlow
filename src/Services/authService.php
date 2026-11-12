@@ -60,19 +60,6 @@ function auth_user_from_cookie(): ?array
     return $query->fetch() ?: null;
 }
 
-function auth_user_from_authorization(): ?array
-{
-    $authorization = $_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? '';
-    if (!is_string($authorization) || !preg_match('/^Bearer\s+(.+)$/i', trim($authorization), $matches)) {
-        return null;
-    }
-    $claims = auth_decode_token(trim($matches[1]));
-    if ($claims === null) return null;
-    $query = db()->prepare('SELECT Id_users, name, first_name, email, role, adresse, postal_code, city, country, phone, avatar FROM Users WHERE Id_users = :id AND status = :status LIMIT 1');
-    $query->execute(['id' => (int) $claims['sub'], 'status' => 'active']);
-    return $query->fetch() ?: null;
-}
-
 function auth_set_cookie(array $user): void
 {
     setcookie('uniflow_token', auth_create_token($user), ['expires' => time() + 3600, 'path' => '/', 'secure' => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off', 'httponly' => true, 'samesite' => 'Lax']);

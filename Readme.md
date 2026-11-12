@@ -9,7 +9,7 @@
 
 Si la base existe déjà, exécutez une seule fois `src/database/migrations/20261028_normalize_first_name.sql` avant d'utiliser le formulaire mis à jour. Les nouveaux comptes reçoivent le rôle `student`; pour donner l'accès admin à un compte, changez son rôle en `admin` dans la table `Users`.
 
-L'inscription stocke les mots de passe avec password_hash; la connexion les valide avec password_verify. Les accès SQL utilisent PDO et des requêtes préparées. Le JWT HS256 est signé côté serveur et placé dans un cookie HttpOnly, SameSite=Lax, valable une heure. En production, utilisez HTTPS pour que le cookie soit également marqué Secure.
+L'inscription stocke les mots de passe avec password_hash; la connexion les valide avec password_verify. Les accès SQL utilisent PDO et des requêtes préparées. Le JWT HS256 est signé côté serveur et placé uniquement dans un cookie HttpOnly, SameSite=Lax, valable une heure. En production, utilisez HTTPS pour que le cookie soit également marqué Secure.
 
 
 ## Chat temps reel
