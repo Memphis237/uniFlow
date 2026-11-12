@@ -18,7 +18,7 @@ function page_controller_dispatch(string $page): bool
         'messages' => 'message',
         'profile' => 'profile',
         'admin' => 'admin',
-        'help' => 'welcome',
+        'help' => 'help',
     ];
 
     if (!isset($pages[$page])) {

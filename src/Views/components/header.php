@@ -36,7 +36,7 @@ if ($userName === '') {
         <span class="hidden sm:block h-5 border-l border-slate-200"></span>
         <button type="button" onclick="toggleLocationModal()" class="hidden sm:flex items-center gap-2 text-sm text-slate-500">
             <i data-lucide="map-pin" class="w-4 h-4"></i> 
-            <?= htmlspecialchars(trim((string)($user['city'] ?? '').' '.(string)($user['country'] ?? '')) ?: (trim((string)($user['adresse'] ?? '').' '.(string)($user['postal_code'] ?? '')) ?: 'Definir ma localisation'), ENT_QUOTES, 'UTF-8') ?>
+            <?= htmlspecialchars(trim((string)($user['city'] ?? '').' '.(string)($user['country'] ?? '')) ?: (trim((string)($user['adresse'] ?? '').' '.(string)($user['postal_code'] ?? '')) ?: 'Dé%finir ma localisation'), ENT_QUOTES, 'UTF-8') ?>
         </button>
     </div>
     <div class="flex items-center gap-4">

@@ -119,7 +119,10 @@ if (!isset($totalUnreadMessages) && isset($user['Id_users'])) {
         </a>
         <a
             href="index.php?page=help"
-            class="flex items-center gap-3 px-3 py-2 text-slate-500 hover:bg-slate-50"
+            <?= ($currentPage ?? '') === 'help' ? 'aria-current="page"' : '' ?>
+            class="flex items-center gap-3 rounded-lg px-3 py-2 <?= ($currentPage ?? '') === 'help'
+                ? 'bg-teal-50 text-teal-700 font-semibold'
+                : 'text-slate-500 hover:bg-slate-50' ?>"
         >
             <i data-lucide="circle-help" class="w-5 h-5"></i>
             Aide & conseils
