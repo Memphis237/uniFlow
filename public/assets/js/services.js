@@ -1,4 +1,5 @@
 (() => {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
     const serviceModal = document.getElementById('serviceModal');
     const detailModal = document.getElementById('detailModal');
     const locationModal = document.getElementById('locationModal');
@@ -138,7 +139,7 @@
         submit.disabled = true;
 
         try {
-            const response = await fetch('index.php?api=service-create', { method: 'POST', body: new FormData(form) });
+            const response = await fetch('index.php?api=service-create', { method: 'POST', headers: { 'X-CSRF-Token': csrfToken }, body: new FormData(form) });
             const data = await response.json();
             if (!response.ok) throw new Error(data.error || 'Publication impossible.');
             status.textContent = 'Service publié. Actualisation de la liste…';
@@ -182,7 +183,7 @@
 
     document.getElementById('detailLike')?.addEventListener('click', async () => {
         if (!selectedService.id) return;
-        const response = await fetch(`index.php?api=service-like&id=${selectedService.id}`, { method: 'POST' });
+        const response = await fetch(`index.php?api=service-like&id=${selectedService.id}`, { method: 'POST', headers: { 'X-CSRF-Token': csrfToken } });
         const data = await response.json();
         if (response.ok) document.getElementById('detailLike').querySelector('span').textContent = `${data.likes} j’aime`;
     });
@@ -200,7 +201,7 @@
             return;
         }
         const body = new URLSearchParams({ service_id: String(selectedService.id) });
-        const response = await fetch('index.php?api=contact', { method: 'POST', body });
+        const response = await fetch('index.php?api=contact', { method: 'POST', headers: { 'X-CSRF-Token': csrfToken }, body });
         const data = await response.json();
         if (data.redirect) window.location.href = data.redirect;
         else status.textContent = data.error || '';
@@ -218,7 +219,7 @@
             const body = new FormData(event.currentTarget);
             body.append('service_id', String(selectedService.id));
             try {
-                const response = await fetch(`index.php?api=${api}`, { method: 'POST', body });
+                const response = await fetch(`index.php?api=${api}`, { method: 'POST', headers: { 'X-CSRF-Token': csrfToken }, body });
                 const data = await response.json();
                 if (!response.ok || !data.ok) throw new Error(data.error || 'Une erreur est survenue.');
                 status.textContent = api === 'review-create' ? 'Avis enregistré.' : 'Demande enregistrée.';
@@ -303,7 +304,7 @@
             if (serviceId) {
                 likeButtons.forEach((button) => { button.disabled = true; });
                 try {
-                    const response = await fetch(`index.php?api=service-like&id=${serviceId}`, { method: 'POST' });
+                    const response = await fetch(`index.php?api=service-like&id=${serviceId}`, { method: 'POST', headers: { 'X-CSRF-Token': csrfToken } });
                     const data = await response.json();
                     if (!response.ok) throw new Error(data.error || 'Action impossible.');
                     state.liked = Boolean(data.liked);

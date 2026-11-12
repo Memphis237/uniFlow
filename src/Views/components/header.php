@@ -6,6 +6,7 @@ if ($userName === '') $userName = 'Mon profil';
 <html lang="fr">
 <head>
     <meta charset="utf-8">
+    <meta name="csrf-token" content="<?= htmlspecialchars(auth_csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#f6f9fa">
     <title><?= htmlspecialchars($pageTitle ?? 'UniFlow', ENT_QUOTES, 'UTF-8') ?> — UniFlow</title>

@@ -31,7 +31,7 @@ if (($user['role'] ?? '') !== 'admin') {
 <body class="home-page">
     <header class="home-nav">
         <a class="brand" href="index.php?page=admin"><span class="brand-mark">u</span><span>uni<span>flow</span></span></a>
-        <a class="logout" href="index.php?page=logout">Se déconnecter</a>
+        <form action="index.php?page=logout" method="post"><input type="hidden" name="csrf_token" value="<?= htmlspecialchars(auth_csrf_token(), ENT_QUOTES, 'UTF-8') ?>"><button class="logout" type="submit">Se déconnecter</button></form>
     </header>
     <main class="home-content">
         <span class="eyebrow teal">ESPACE ADMINISTRATION</span>

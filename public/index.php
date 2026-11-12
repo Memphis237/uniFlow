@@ -9,6 +9,7 @@ if (($_GET['api'] ?? '') !== '') {
     header('Content-Type: application/json; charset=utf-8');
     try {
         $api = (string) $_GET['api'];
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') auth_require_csrf_token();
         if (in_array($api, ['service-create','service-like','service-detail','booking-create','review-create','contact','messages-list','message-send','messages-unread','chat-token','chat-presence'], true)) {
             $actor = auth_user_from_cookie();
             if (!$actor) { http_response_code(401); echo json_encode(['error'=>'Connecte-toi pour continuer.']); exit; }
@@ -77,6 +78,9 @@ if (($_GET['api'] ?? '') !== '') {
         }
         http_response_code(404);
         echo json_encode(['error' => 'Requête inconnue.']);
+    } catch (AuthCsrfException $exception) {
+        http_response_code(403);
+        echo json_encode(['error' => $exception->getMessage()], JSON_INVALID_UTF8_SUBSTITUTE);
     } catch (RuntimeException $exception) {
         http_response_code(400);
         echo json_encode(['error' => $exception->getMessage()], JSON_INVALID_UTF8_SUBSTITUTE);
@@ -106,7 +110,11 @@ if (($_GET['page'] ?? '') === 'favorites') {
 if (($_GET['page'] ?? '') === 'campus') { require __DIR__ . '/../src/Views/pages/campus.php'; exit; }
 if (($_GET['page'] ?? '') === 'messages') { require __DIR__ . '/../src/Views/pages/message.php'; exit; }
 if (($_GET['page'] ?? '') === 'profile') { require __DIR__ . '/../src/Views/pages/profile.php'; exit; }
-if (($_GET['page'] ?? '') === 'logout') { require __DIR__ . '/../src/Services/logout.php'; exit; }
+if (($_GET['page'] ?? '') === 'logout') {
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') { http_response_code(405); header('Allow: POST'); exit('Méthode non autorisée.'); }
+    try { auth_require_csrf_token(); } catch (RuntimeException $exception) { http_response_code(403); exit($exception->getMessage()); }
+    require __DIR__ . '/../src/Services/logout.php'; exit;
+}
 if (($_GET['page'] ?? '') === 'admin') {
     require __DIR__ . '/../src/Views/pages/admin.php';
     exit;

@@ -13,6 +13,18 @@ function auth_csrf_token(): string
     return $_SESSION['csrf_token'];
 }
 
+class AuthCsrfException extends RuntimeException {}
+
+function auth_require_csrf_token(): void
+{
+    $expected = auth_csrf_token();
+    $provided = (string) ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? $_POST['csrf_token'] ?? '');
+    if ($provided === '' || !hash_equals($expected, $provided)) {
+        http_response_code(403);
+        throw new AuthCsrfException('Jeton de sécurité invalide. Recharge la page et réessaie.');
+    }
+}
+
 function auth_jwt_secret(): string
 {
     $secret = app_env('JWT_SECRET');

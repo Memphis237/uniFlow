@@ -1,4 +1,5 @@
 (() => {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
     async function updateUnreadBadge() {
         try {
             const response = await fetch('index.php?api=messages-unread');
@@ -27,8 +28,8 @@
         try {
             await fetch('index.php?api=chat-presence', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: new URLSearchParams({ state }),
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRF-Token': csrfToken },
+                body: new URLSearchParams({ state, csrf_token: csrfToken }),
             });
         } catch {
             // Presence is best effort.
@@ -63,6 +64,6 @@
     window.setInterval(updateUnreadBadge, 10000);
     window.setInterval(() => sendPresence(), 15000);
     window.addEventListener('pagehide', () => {
-        navigator.sendBeacon('index.php?api=chat-presence', new URLSearchParams({ state: 'offline' }));
+        navigator.sendBeacon('index.php?api=chat-presence', new URLSearchParams({ state: 'offline', csrf_token: csrfToken }));
     });
 })();

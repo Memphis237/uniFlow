@@ -124,8 +124,9 @@ if (!isset($totalUnreadMessages) && isset($user['Id_users'])) {
             <i data-lucide="circle-help" class="w-5 h-5"></i>
             Aide & conseils
         </a>
-        <form action="index.php" method="get">
+        <form action="index.php?page=logout" method="post">
             <input type="hidden" name="page" value="logout">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(auth_csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
             <button
                 type="submit"
                 class="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-500 transition hover:bg-rose-50 hover:text-rose-700"
