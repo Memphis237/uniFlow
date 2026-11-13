@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../database/db.php';
 require_once __DIR__ . '/../Models/authModel.php';
+require_once __DIR__ . '/emailVerificationService.php';
 
 function auth_csrf_token(): string
 {
@@ -197,7 +198,7 @@ function auth_handle(
     string $password,
     string $firstName = ''
 ): array {
-    if (!in_array($action, ['login', 'register'], true)) {
+    if ($action !== 'login') {
         throw new RuntimeException('Action d’authentification inconnue.');
     }
 
@@ -210,22 +211,25 @@ function auth_handle(
     }
 
     $database = db();
-    if ($action === 'register') {
-        return auth_register($database, $name, $firstName, $email, $password);
-    }
-
     return auth_login($database, $email, $password);
 }
 
-function auth_register(
-    PDO $database,
+function auth_registration_start(
     string $name,
     string $firstName,
     string $email,
     string $password
-): array {
+): void {
+    $database = db();
+    $email = strtolower(trim($email));
     $name = trim($name);
     $firstName = trim($firstName);
+    if (
+        !filter_var($email, FILTER_VALIDATE_EMAIL)
+        || strlen($email) > 100
+    ) {
+        throw new RuntimeException('Veuillez saisir une adresse e-mail valide.');
+    }
     if ($name === '' || strlen($name) > 255) {
         throw new RuntimeException(
             'Veuillez saisir votre nom complet (255 caractères maximum).'
@@ -245,21 +249,150 @@ function auth_register(
         );
     }
 
+    email_verification_issue(
+        $database,
+        'signup',
+        null,
+        $email,
+        [
+            'name' => $name,
+            'first_name' => $firstName,
+            'password' => password_hash($password, PASSWORD_DEFAULT),
+        ]
+    );
+}
+
+function auth_registration_resend(string $email): void
+{
+    $database = db();
+    $email = strtolower(trim($email));
+    $challenge = email_verification_model_find(
+        $database,
+        'signup',
+        null,
+        $email
+    );
+    if (!$challenge) {
+        throw new RuntimeException(
+            'Aucune inscription en attente. Recommence le formulaire.'
+        );
+    }
+
+    email_verification_issue(
+        $database,
+        'signup',
+        null,
+        $email,
+        [
+            'name' => $challenge['pending_name'],
+            'first_name' => $challenge['pending_first_name'],
+            'password' => $challenge['pending_password'],
+        ]
+    );
+}
+
+function auth_registration_verify(string $email, string $code): array
+{
+    $database = db();
+    $email = strtolower(trim($email));
+    $challenge = email_verification_consume(
+        $database,
+        'signup',
+        null,
+        $email,
+        $code
+    );
+
+    if (auth_model_email_exists($database, $email)) {
+        throw new RuntimeException(
+            'Cette adresse e-mail possède déjà un compte.'
+        );
+    }
+
     $userId = auth_model_create_student(
         $database,
-        $name,
-        $firstName,
+        (string) $challenge['pending_name'],
+        (string) $challenge['pending_first_name'],
         $email,
-        password_hash($password, PASSWORD_DEFAULT)
+        (string) $challenge['pending_password']
     );
 
     return [
         'Id_users' => $userId,
-        'name' => $name,
-        'first_name' => $firstName,
+        'name' => $challenge['pending_name'],
+        'first_name' => $challenge['pending_first_name'],
         'email' => $email,
         'role' => 'student',
     ];
+}
+
+function auth_password_reset_start(string $email): void
+{
+    $email = strtolower(trim($email));
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($email) > 100) {
+        throw new RuntimeException('Veuillez saisir une adresse e-mail valide.');
+    }
+
+    $database = db();
+    $user = auth_model_find_active_by_email($database, $email);
+    if ($user) {
+        email_verification_issue(
+            $database,
+            'password_reset',
+            (int) $user['Id_users'],
+            $email
+        );
+    }
+}
+
+function auth_password_reset_resend(string $email): void
+{
+    $email = strtolower(trim($email));
+    $database = db();
+    $user = auth_model_find_active_by_email($database, $email);
+    if ($user) {
+        email_verification_issue(
+            $database,
+            'password_reset',
+            (int) $user['Id_users'],
+            $email
+        );
+    }
+}
+
+function auth_password_reset_complete(
+    string $email,
+    string $code,
+    string $password,
+    string $confirmation
+): void {
+    if ($password !== $confirmation) {
+        throw new RuntimeException('Les mots de passe ne correspondent pas.');
+    }
+    if (strlen($password) < 8 || strlen($password) > 4096) {
+        throw new RuntimeException(
+            'Votre mot de passe doit contenir au moins 8 caractères.'
+        );
+    }
+
+    $database = db();
+    $email = strtolower(trim($email));
+    $user = auth_model_find_active_by_email($database, $email);
+    if (!$user) {
+        throw new RuntimeException('Code invalide ou expiré.');
+    }
+    email_verification_consume(
+        $database,
+        'password_reset',
+        (int) $user['Id_users'],
+        $email,
+        $code
+    );
+    auth_model_update_password(
+        $database,
+        (int) $user['Id_users'],
+        password_hash($password, PASSWORD_DEFAULT)
+    );
 }
 
 function auth_login(PDO $database, string $email, string $password): array

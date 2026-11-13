@@ -68,3 +68,14 @@ function auth_model_update_password(
     );
     $query->execute(['password' => $passwordHash, 'id' => $userId]);
 }
+
+function auth_model_update_email(
+    PDO $database,
+    int $userId,
+    string $email
+): void {
+    $query = $database->prepare(
+        'UPDATE Users SET email = :email WHERE Id_users = :id'
+    );
+    $query->execute(['email' => $email, 'id' => $userId]);
+}

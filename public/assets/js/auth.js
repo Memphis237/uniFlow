@@ -40,3 +40,21 @@ document.querySelector('.reveal')?.addEventListener('click', function () {
   );
   this.classList.toggle('is-visible', shown);
 });
+document.querySelectorAll('[data-resend-countdown]').forEach((timer) => {
+  const button = timer.closest('form')?.querySelector('[data-resend-button]');
+  const resendAt = Number(timer.dataset.resendCountdown || 0);
+  const updateCountdown = () => {
+    const seconds = Math.max(0, resendAt - Math.floor(Date.now() / 1000));
+    if (seconds === 0) {
+      button.disabled = false;
+      timer.textContent = 'Vous pouvez demander un nouveau code.';
+      return;
+    }
+    button.disabled = true;
+    timer.textContent = `Nouveau code disponible dans ${String(
+      Math.floor(seconds / 60),
+    ).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
+    window.setTimeout(updateCountdown, 1000);
+  };
+  updateCountdown();
+});

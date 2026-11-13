@@ -13,7 +13,7 @@ UniFlow est une application destinée à la communauté étudiante. Elle permet 
 ## Installation
 
 1. Clone le projet dans le dossier servi par Apache.
-2. Crée un fichier `.env` à la racine du projet et renseigne les paramètres suivants :
+2. Copie `.env.example` vers `.env` à la racine du projet, puis remplace les valeurs d’exemple :
 
    ```dotenv
    DB_HOST=localhost
@@ -21,12 +21,20 @@ UniFlow est une application destinée à la communauté étudiante. Elle permet 
    DB_NAME=uniflow
    DB_USER=root
    DB_PASSWORD=
-   JWT_SECRET=remplacer-par-une-cle-aleatoire-de-32-caracteres-minimum
+   JWT_SECRET=remplacer_par_une_cle_aleatoire_de_32_caracteres_minimum
+   SMTP_HOST=smtp.exemple.fr
+   SMTP_PORT=587
+   SMTP_USERNAME=ton-identifiant-smtp
+   SMTP_PASSWORD=ton-mot-de-passe-smtp
+   SMTP_ENCRYPTION=tls
+   SMTP_FROM_EMAIL=no-reply@exemple.fr
+   SMTP_FROM_NAME=UniFlow
    ```
 
-   Utilise une clé privée aléatoire d’au moins 32 caractères pour `JWT_SECRET`. Ne partage pas ce secret.
+   Remplace les paramètres SMTP d’exemple par ceux fournis par ton service de messagerie. Utilise une clé privée aléatoire d’au moins 32 caractères pour `JWT_SECRET`. Ne partage pas ces secrets.
 
 3. Crée la base de données, puis importe `src/database/schema.sql`. Ce schéma contient déjà les tables et colonnes utilisées par l’application, notamment `Message_attachments` et `Messages.delivered_at`. Il n’est pas nécessaire de recréer ces éléments avec du SQL séparé.
+   Si ta base existe déjà, exécute une seule fois `src/database/migrations/20261113_add_email_verification_codes.sql` pour créer la table dédiée aux codes de vérification.
 4. Installe les dépendances JavaScript et génère le CSS Tailwind :
 
    ```bash
@@ -75,6 +83,6 @@ npm run format:js:check
 
 ## Sécurité et comptes
 
-Les mots de passe sont enregistrés avec `password_hash()` et vérifiés avec `password_verify()`. Les requêtes SQL passent par PDO et des requêtes préparées. Le jeton JWT est signé côté serveur et stocké dans un cookie `HttpOnly` avec `SameSite=Lax` pendant une heure. En production, utilise HTTPS afin que le cookie soit également marqué `Secure`.
+Les mots de passe sont enregistrés avec `password_hash()` et vérifiés avec `password_verify()`. À l’inscription, l’adresse doit être vérifiée avec un code aléatoire à 6 chiffres envoyé par SMTP. La modification de l’adresse exige la vérification de l’adresse actuelle puis de la nouvelle adresse ; le changement de mot de passe est confirmé par un code envoyé à l’adresse enregistrée. Chaque code expire après 10 minutes, autorise 5 tentatives et peut être renvoyé toutes les 60 secondes. Les requêtes SQL passent par PDO et des requêtes préparées. Le jeton JWT est signé côté serveur et stocké dans un cookie `HttpOnly` avec `SameSite=Lax` pendant une heure. En production, utilise HTTPS afin que le cookie soit également marqué `Secure`.
 
 Les nouveaux comptes reçoivent le rôle `student`. Pour attribuer les droits d’administration, modifie le rôle du compte concerné dans la table `Users`.

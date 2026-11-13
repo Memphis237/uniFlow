@@ -13,6 +13,16 @@ if (!$user) {
     exit;
 }
 $csrfToken = auth_csrf_token(); // démarre la session avant tout rendu HTML et tout envoi d'en-tête.
+require_once __DIR__ . '/../../Controllers/accountSecurityControllerFunctions.php';
+if (
+    $_SERVER['REQUEST_METHOD'] === 'POST'
+    && str_starts_with((string) ($_POST['action'] ?? ''), 'security-')
+) {
+    account_security_controller_dispatch(db(), $user);
+}
+$securityFlash = $_SESSION['account_security_flash'] ?? [];
+unset($_SESSION['account_security_flash']);
+$securityState = $_SESSION['account_security'][(int) $user['Id_users']] ?? [];
 $pdo = db();
 $notice = '';
 $error = '';
@@ -157,6 +167,191 @@ $profileDisplayLocation = trim((string)$profile['city'].' '.(string)$profile['co
  <div id="profile-events" class="profile-tab-panel hidden grid gap-3 p-5 md:grid-cols-2 md:px-0" role="tabpanel" hidden><?php foreach ($events as $event): ?><article class="rounded-xl border border-slate-200 bg-white p-5"><div class="flex items-start justify-between gap-3"><span class="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-teal-50 text-teal-700"><i data-lucide="calendar-days" class="h-5 w-5"></i></span><span class="rounded-full bg-cyan-50 px-3 py-1 text-xs text-cyan-800"><?= htmlspecialchars($event['participation'], ENT_QUOTES, 'UTF-8') ?></span></div><h2 class="mt-4 font-semibold text-slate-900"><?= htmlspecialchars($event['title'], ENT_QUOTES, 'UTF-8') ?></h2><p class="mt-2 text-sm text-slate-500"><?= date('d/m/Y à H:i', strtotime($event['starts_at'])) ?><?php if ($event['location']): ?> · <?= htmlspecialchars($event['location'], ENT_QUOTES, 'UTF-8') ?><?php endif; ?></p></article><?php endforeach; ?><?php if (!$events): ?><p class="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-sm text-slate-500 md:col-span-2">Aucun événement n’est associé à ton profil pour le moment.</p><?php endif; ?></div>
 </section>
 
-<div id="profileModal" data-open-on-load="<?= $error && ($_POST['action'] ?? '') === 'profile-save' ? 'true' : 'false' ?>" class="fixed inset-0 z-[60] hidden items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="profileModalTitle"><div class="w-full max-w-xl overflow-hidden rounded-2xl bg-white shadow-2xl"><div class="flex items-center justify-between border-b border-slate-100 px-6 py-5"><div><p class="text-xs font-semibold uppercase tracking-wider text-teal-700">Ton espace</p><h2 id="profileModalTitle" class="mt-1 text-xl font-bold text-slate-900">Modifier mon profil</h2></div><button type="button" id="closeProfileModal" class="rounded-lg p-2 text-slate-500 hover:bg-slate-100" aria-label="Fermer"><i data-lucide="x" class="h-5 w-5"></i></button></div><form method="post" enctype="multipart/form-data" class="max-h-[78vh] space-y-4 overflow-y-auto p-6"><input type="hidden" name="csrf_token" value="<?= htmlspecialchars(auth_csrf_token(), ENT_QUOTES, 'UTF-8') ?>"><input type="hidden" name="action" value="profile-save"><?php if ($error && ($_POST['action'] ?? '') === 'profile-save'): ?><p class="rounded-lg bg-rose-50 p-3 text-sm text-rose-700" role="alert"><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?><div class="grid grid-cols-2 gap-3"><label class="text-sm font-medium text-slate-700">Prénom<input name="first_name" required maxlength="255" value="<?= htmlspecialchars($profile['first_name'], ENT_QUOTES, 'UTF-8') ?>" class="mt-1.5 w-full rounded-lg border border-slate-200 px-3 py-2.5 outline-none focus:border-teal-500"></label><label class="text-sm font-medium text-slate-700">Nom<input name="name" required maxlength="255" value="<?= htmlspecialchars($profile['name'], ENT_QUOTES, 'UTF-8') ?>" class="mt-1.5 w-full rounded-lg border border-slate-200 px-3 py-2.5 outline-none focus:border-teal-500"></label></div><label class="block text-sm font-medium text-slate-700">Adresse<input name="adresse" maxlength="255" value="<?= htmlspecialchars((string)$profile['adresse'], ENT_QUOTES, 'UTF-8') ?>" placeholder="Université de Lyon" class="mt-1.5 w-full rounded-lg border border-slate-200 px-3 py-2.5 outline-none focus:border-teal-500"></label><div class="grid grid-cols-2 gap-3"><label class="text-sm font-medium text-slate-700">Code postal<input name="postal_code" maxlength="20" value="<?= htmlspecialchars((string)$profile['postal_code'], ENT_QUOTES, 'UTF-8') ?>" placeholder="69007" class="mt-1.5 w-full rounded-lg border border-slate-200 px-3 py-2.5 outline-none focus:border-teal-500"></label><label class="text-sm font-medium text-slate-700">Telephone<input name="phone" type="tel" maxlength="30" value="<?= htmlspecialchars((string)$profile['phone'],ENT_QUOTES,'UTF-8') ?>" placeholder="06 12 34 56 78" class="mt-1.5 w-full rounded-lg border border-slate-200 px-3 py-2.5 outline-none focus:border-teal-500"></label></div><div class="grid grid-cols-2 gap-3"><label class="text-sm font-medium text-slate-700">Ville<input name="city" maxlength="120" value="<?= htmlspecialchars((string)$profile['city'],ENT_QUOTES,'UTF-8') ?>" placeholder="Lyon" class="mt-1.5 w-full rounded-lg border border-slate-200 px-3 py-2.5 outline-none focus:border-teal-500"></label><label class="text-sm font-medium text-slate-700">Pays<input name="country" maxlength="120" value="<?= htmlspecialchars((string)$profile['country'],ENT_QUOTES,'UTF-8') ?>" placeholder="France" class="mt-1.5 w-full rounded-lg border border-slate-200 px-3 py-2.5 outline-none focus:border-teal-500"></label></div><label class="block text-sm font-medium text-slate-700">À propos de moi<textarea name="biographie" maxlength="255" rows="3" placeholder="Quelques mots sur toi et ce que tu aimes faire…" class="mt-1.5 w-full rounded-lg border border-slate-200 px-3 py-2.5 outline-none focus:border-teal-500"><?= htmlspecialchars((string)$profile['biographie'],ENT_QUOTES,'UTF-8') ?></textarea></label><div class="grid gap-3 sm:grid-cols-2"><label class="cursor-pointer rounded-xl border border-dashed border-slate-300 p-4 text-sm hover:border-teal-500"><span class="flex items-center gap-2 font-semibold text-slate-800"><i data-lucide="user-round" class="h-4 w-4 text-teal-700"></i>Photo de profil</span><small class="mt-1 block text-slate-500">JPG, PNG ou WebP · 5 Mo max.</small><input id="avatarUpload" name="avatar" type="file" accept="image/jpeg,image/png,image/webp" class="mt-3 block w-full text-xs text-slate-500"></label><label class="cursor-pointer rounded-xl border border-dashed border-slate-300 p-4 text-sm hover:border-teal-500"><span class="flex items-center gap-2 font-semibold text-slate-800"><i data-lucide="image" class="h-4 w-4 text-teal-700"></i>Image de fond</span><small class="mt-1 block text-slate-500">JPG, PNG ou WebP · 5 Mo max.</small><input id="coverUpload" name="cover" type="file" accept="image/jpeg,image/png,image/webp" class="mt-3 block w-full text-xs text-slate-500"></label></div><div class="flex justify-end gap-3 border-t border-slate-100 pt-4"><button type="button" id="cancelProfileModal" class="rounded-lg border border-slate-200 px-4 py-2.5 text-sm">Annuler</button><button class="rounded-lg bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-800">Enregistrer les modifications</button></div></form></div></div>
+<section id="account-security" class="mx-auto mt-8 max-w-[1200px] px-5 pb-8 md:px-5">
+    <div class="mb-5">
+        <p class="text-xs font-semibold uppercase tracking-wider text-teal-700">Sécurité du compte</p>
+        <h2 class="mt-1 text-2xl font-bold text-slate-900">Adresse e-mail et mot de passe</h2>
+        <p class="mt-2 text-sm text-slate-500">
+            Chaque modification est protégée par un code envoyé par e-mail, valable 10 minutes.
+        </p>
+    </div>
+
+    <?php if (!empty($securityFlash['notice'])): ?>
+        <p class="mb-4 rounded-xl bg-emerald-50 p-3 text-sm text-emerald-800" role="status">
+            <?= htmlspecialchars($securityFlash['notice'], ENT_QUOTES, 'UTF-8') ?>
+        </p>
+    <?php endif; ?>
+    <?php if (!empty($securityFlash['error'])): ?>
+        <p class="mb-4 rounded-xl bg-rose-50 p-3 text-sm text-rose-800" role="alert">
+            <?= htmlspecialchars($securityFlash['error'], ENT_QUOTES, 'UTF-8') ?>
+        </p>
+    <?php endif; ?>
+
+    <div class="grid gap-5 lg:grid-cols-2">
+        <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
+            <h3 class="font-semibold text-slate-900">Modifier l’adresse e-mail</h3>
+            <p class="mt-1 text-sm text-slate-500">
+                Nous vérifierons d’abord ton adresse actuelle, puis la nouvelle.
+            </p>
+            <?php $emailSecurityState = $securityState['email'] ?? null; ?>
+            <?php if ($emailSecurityState): ?>
+                <p class="mt-4 rounded-lg bg-teal-50 p-3 text-sm text-teal-900">
+                    <?php if (($emailSecurityState['stage'] ?? '') === 'current'): ?>
+                        Saisis le code envoyé à ton adresse actuelle pour autoriser le changement vers
+                        <strong><?= htmlspecialchars($emailSecurityState['email'], ENT_QUOTES, 'UTF-8') ?></strong>.
+                    <?php else: ?>
+                        Saisis le code envoyé à la nouvelle adresse
+                        <strong><?= htmlspecialchars($emailSecurityState['email'], ENT_QUOTES, 'UTF-8') ?></strong>.
+                    <?php endif; ?>
+                </p>
+                <form method="post" class="mt-4 space-y-3">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+                    <input type="hidden" name="action" value="security-email-verify">
+                    <label for="emailVerificationCode" class="block text-sm font-medium text-slate-700">
+                        Code de vérification
+                    </label>
+                    <input
+                        id="emailVerificationCode"
+                        name="code"
+                        type="text"
+                        inputmode="numeric"
+                        autocomplete="one-time-code"
+                        pattern="[0-9]{6}"
+                        maxlength="6"
+                        required
+                        class="w-full rounded-lg border border-slate-200 px-3 py-2.5 tracking-[.35em] outline-none focus:border-teal-500"
+                        placeholder="000000"
+                    >
+                    <button class="rounded-lg bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-800">
+                        Vérifier le code
+                    </button>
+                </form>
+                <form method="post" class="mt-3">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+                    <input type="hidden" name="action" value="security-resend">
+                    <input type="hidden" name="kind" value="email">
+                    <button type="submit" data-resend-button disabled class="text-sm font-medium text-teal-700 hover:text-teal-900">
+                        Renvoyer un code
+                    </button>
+                    <span class="ml-2 text-xs text-slate-500" data-resend-countdown="<?= (int) ($emailSecurityState['resend_at'] ?? 0) ?>" aria-live="polite"></span>
+                </form>
+                <form method="post" class="mt-2">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+                    <input type="hidden" name="action" value="security-cancel">
+                    <input type="hidden" name="kind" value="email">
+                    <button type="submit" class="text-sm text-slate-500 hover:text-slate-800">
+                        Annuler ce changement
+                    </button>
+                </form>
+            <?php else: ?>
+                <form method="post" class="mt-4 space-y-3">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+                    <input type="hidden" name="action" value="security-email-start">
+                    <label for="newEmail" class="block text-sm font-medium text-slate-700">
+                        Nouvelle adresse e-mail
+                    </label>
+                    <input
+                        id="newEmail"
+                        name="new_email"
+                        type="email"
+                        maxlength="100"
+                        autocomplete="email"
+                        required
+                        class="w-full rounded-lg border border-slate-200 px-3 py-2.5 outline-none focus:border-teal-500"
+                        placeholder="toi@exemple.fr"
+                    >
+                    <button class="rounded-lg bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-800">
+                        Envoyer un code
+                    </button>
+                </form>
+            <?php endif; ?>
+        </article>
+
+        <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
+            <h3 class="font-semibold text-slate-900">Modifier le mot de passe</h3>
+            <p class="mt-1 text-sm text-slate-500">
+                Un code sera envoyé à <?= htmlspecialchars($profile['email'], ENT_QUOTES, 'UTF-8') ?>.
+            </p>
+            <?php $passwordSecurityState = $securityState['password'] ?? null; ?>
+            <?php if ($passwordSecurityState): ?>
+                <form method="post" class="mt-4 space-y-3">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+                    <input type="hidden" name="action" value="security-password-verify">
+                    <label for="passwordVerificationCode" class="block text-sm font-medium text-slate-700">
+                        Code de vérification
+                    </label>
+                    <input
+                        id="passwordVerificationCode"
+                        name="code"
+                        type="text"
+                        inputmode="numeric"
+                        autocomplete="one-time-code"
+                        pattern="[0-9]{6}"
+                        maxlength="6"
+                        required
+                        class="w-full rounded-lg border border-slate-200 px-3 py-2.5 tracking-[.35em] outline-none focus:border-teal-500"
+                        placeholder="000000"
+                    >
+                    <button class="rounded-lg bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-800">
+                        Confirmer le nouveau mot de passe
+                    </button>
+                </form>
+                <form method="post" class="mt-3">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+                    <input type="hidden" name="action" value="security-resend">
+                    <input type="hidden" name="kind" value="password">
+                    <button type="submit" data-resend-button disabled class="text-sm font-medium text-teal-700 hover:text-teal-900">
+                        Renvoyer un code
+                    </button>
+                    <span class="ml-2 text-xs text-slate-500" data-resend-countdown="<?= (int) ($passwordSecurityState['resend_at'] ?? 0) ?>" aria-live="polite"></span>
+                </form>
+                <form method="post" class="mt-2">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+                    <input type="hidden" name="action" value="security-cancel">
+                    <input type="hidden" name="kind" value="password">
+                    <button type="submit" class="text-sm text-slate-500 hover:text-slate-800">
+                        Annuler ce changement
+                    </button>
+                </form>
+            <?php else: ?>
+                <form method="post" class="mt-4 space-y-3">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+                    <input type="hidden" name="action" value="security-password-start">
+                    <label for="newPassword" class="block text-sm font-medium text-slate-700">
+                        Nouveau mot de passe
+                    </label>
+                    <input
+                        id="newPassword"
+                        name="new_password"
+                        type="password"
+                        minlength="8"
+                        maxlength="4096"
+                        autocomplete="new-password"
+                        required
+                        class="w-full rounded-lg border border-slate-200 px-3 py-2.5 outline-none focus:border-teal-500"
+                    >
+                    <label for="passwordConfirmation" class="block text-sm font-medium text-slate-700">
+                        Confirmer le nouveau mot de passe
+                    </label>
+                    <input
+                        id="passwordConfirmation"
+                        name="password_confirmation"
+                        type="password"
+                        minlength="8"
+                        maxlength="4096"
+                        autocomplete="new-password"
+                        required
+                        class="w-full rounded-lg border border-slate-200 px-3 py-2.5 outline-none focus:border-teal-500"
+                    >
+                    <button class="rounded-lg bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-800">
+                        Envoyer un code
+                    </button>
+                </form>
+            <?php endif; ?>
+        </article>
+    </div>
+</section>
+
+<div id="profileModal" data-open-on-load="<?= $error && ($_POST['action'] ?? '') === 'profile-save' ? 'true' : 'false' ?>" class="fixed inset-0 z-[60] hidden items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="profileModalTitle"><div class="w-full max-w-xl overflow-hidden rounded-2xl bg-white shadow-2xl"><div class="flex items-center justify-between border-b border-slate-100 px-6 py-5"><div><p class="text-xs font-semibold uppercase tracking-wider text-teal-700">Ton espace</p><h2 id="profileModalTitle" class="mt-1 text-xl font-bold text-slate-900">Modifier mon profil</h2></div><button type="button" id="closeProfileModal" class="rounded-lg p-2 text-slate-500 hover:bg-slate-100" aria-label="Fermer"><i data-lucide="x" class="h-5 w-5"></i></button></div><form method="post" enctype="multipart/form-data" class="max-h-[78vh] space-y-4 overflow-y-auto p-6"><input type="hidden" name="csrf_token" value="<?= htmlspecialchars(auth_csrf_token(), ENT_QUOTES, 'UTF-8') ?>"><input type="hidden" name="action" value="profile-save"><?php if ($error && ($_POST['action'] ?? '') === 'profile-save'): ?><p class="rounded-lg bg-rose-50 p-3 text-sm text-rose-700" role="alert"><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?><div class="grid grid-cols-2 gap-3"><label class="text-sm font-medium text-slate-700">Prénom<input name="first_name" required maxlength="255" value="<?= htmlspecialchars($profile['first_name'], ENT_QUOTES, 'UTF-8') ?>" class="mt-1.5 w-full rounded-lg border border-slate-200 px-3 py-2.5 outline-none focus:border-teal-500"></label><label class="text-sm font-medium text-slate-700">Nom<input name="name" required maxlength="255" value="<?= htmlspecialchars($profile['name'], ENT_QUOTES, 'UTF-8') ?>" class="mt-1.5 w-full rounded-lg border border-slate-200 px-3 py-2.5 outline-none focus:border-teal-500"></label></div><label class="block text-sm font-medium text-slate-700">Adresse<input name="adresse" maxlength="255" value="<?= htmlspecialchars((string)$profile['adresse'], ENT_QUOTES, 'UTF-8') ?>" placeholder="Université de Lyon" class="mt-1.5 w-full rounded-lg border border-slate-200 px-3 py-2.5 outline-none focus:border-teal-500"></label><div class="grid grid-cols-2 gap-3"><label class="text-sm font-medium text-slate-700">Code postal<input name="postal_code" maxlength="20" value="<?= htmlspecialchars((string)$profile['postal_code'], ENT_QUOTES, 'UTF-8') ?>" placeholder="69007" class="mt-1.5 w-full rounded-lg border border-slate-200 px-3 py-2.5 outline-none focus:border-teal-500"></label><label class="text-sm font-medium text-slate-700">Telephone<input name="phone" type="tel" maxlength="30" value="<?= htmlspecialchars((string)$profile['phone'], ENT_QUOTES, 'UTF-8') ?>" placeholder="06 12 34 56 78" class="mt-1.5 w-full rounded-lg border border-slate-200 px-3 py-2.5 outline-none focus:border-teal-500"></label></div><div class="grid grid-cols-2 gap-3"><label class="text-sm font-medium text-slate-700">Ville<input name="city" maxlength="120" value="<?= htmlspecialchars((string)$profile['city'], ENT_QUOTES, 'UTF-8') ?>" placeholder="Lyon" class="mt-1.5 w-full rounded-lg border border-slate-200 px-3 py-2.5 outline-none focus:border-teal-500"></label><label class="text-sm font-medium text-slate-700">Pays<input name="country" maxlength="120" value="<?= htmlspecialchars((string)$profile['country'], ENT_QUOTES, 'UTF-8') ?>" placeholder="France" class="mt-1.5 w-full rounded-lg border border-slate-200 px-3 py-2.5 outline-none focus:border-teal-500"></label></div><label class="block text-sm font-medium text-slate-700">À propos de moi<textarea name="biographie" maxlength="255" rows="3" placeholder="Quelques mots sur toi et ce que tu aimes faire…" class="mt-1.5 w-full rounded-lg border border-slate-200 px-3 py-2.5 outline-none focus:border-teal-500"><?= htmlspecialchars((string)$profile['biographie'], ENT_QUOTES, 'UTF-8') ?></textarea></label><div class="grid gap-3 sm:grid-cols-2"><label class="cursor-pointer rounded-xl border border-dashed border-slate-300 p-4 text-sm hover:border-teal-500"><span class="flex items-center gap-2 font-semibold text-slate-800"><i data-lucide="user-round" class="h-4 w-4 text-teal-700"></i>Photo de profil</span><small class="mt-1 block text-slate-500">JPG, PNG ou WebP · 5 Mo max.</small><input id="avatarUpload" name="avatar" type="file" accept="image/jpeg,image/png,image/webp" class="mt-3 block w-full text-xs text-slate-500"></label><label class="cursor-pointer rounded-xl border border-dashed border-slate-300 p-4 text-sm hover:border-teal-500"><span class="flex items-center gap-2 font-semibold text-slate-800"><i data-lucide="image" class="h-4 w-4 text-teal-700"></i>Image de fond</span><small class="mt-1 block text-slate-500">JPG, PNG ou WebP · 5 Mo max.</small><input id="coverUpload" name="cover" type="file" accept="image/jpeg,image/png,image/webp" class="mt-3 block w-full text-xs text-slate-500"></label></div><div class="flex justify-end gap-3 border-t border-slate-100 pt-4"><button type="button" id="cancelProfileModal" class="rounded-lg border border-slate-200 px-4 py-2.5 text-sm">Annuler</button><button class="rounded-lg bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-800">Enregistrer les modifications</button></div></form></div></div>
 <script src="assets/js/profile.js" defer></script>
 <?php require __DIR__.'/../components/footer.php'; ?>

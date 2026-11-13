@@ -280,7 +280,7 @@ require __DIR__.'/../components/navBar.php';
     </i>
     </button>
     </div>
-    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken,ENT_QUOTES,'UTF-8') ?>">
+    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
     <input type="hidden" name="action" value="campus-event">
     <label class="block text-sm">Nom de l’événement<input name="title" maxlength="255" required class="mt-1 w-full rounded-lg border border-slate-200 p-3">
     </label>
@@ -361,7 +361,7 @@ require __DIR__.'/../components/navBar.php';
     </span>
     </p>
     <form id="eventParticipationForm" method="post" class="mt-7">
-    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken,ENT_QUOTES,'UTF-8') ?>">
+    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
     <input id="participationAction" type="hidden" name="action" value="campus-join-event">
     <input id="participationEventId" type="hidden" name="event_id">
     <button id="participationButton" class="w-full rounded-xl bg-teal-600 py-4 font-semibold text-white hover:bg-teal-700">
